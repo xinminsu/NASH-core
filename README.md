@@ -1,7 +1,7 @@
-# KTX Contracts
-Contracts for KTX.
+# NSC Contracts
+Contracts for NSC.
 
-Docs at https://docs.ktx.finance/.
+Docs at https://docs.nsc.finance/.
 
 ## Install Dependencies
 If npx is not installed yet:

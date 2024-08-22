@@ -3,7 +3,7 @@
 pragma solidity 0.6.12;
 
 import "./interfaces/ITimelockTarget.sol";
-import "./interfaces/IKtxTimelock.sol";
+import "./interfaces/INscTimelock.sol";
 import "./interfaces/IHandlerTarget.sol";
 import "../access/interfaces/IAdmin.sol";
 import "../core/interfaces/IVault.sol";
@@ -19,7 +19,7 @@ import "../staking/interfaces/IVester.sol";
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
 
-contract KtxTimelock is IKtxTimelock {
+contract NscTimelock is INscTimelock {
     using SafeMath for uint256;
 
     uint256 public constant PRICE_PRECISION = 10 ** 30;
@@ -70,22 +70,22 @@ contract KtxTimelock is IKtxTimelock {
     event ClearAction(bytes32 action);
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "KtxTimelock: forbidden");
+        require(msg.sender == admin, "NscTimelock: forbidden");
         _;
     }
 
     modifier onlyAdminOrHandler() {
-        require(msg.sender == admin || isHandler[msg.sender], "KtxTimelock: forbidden");
+        require(msg.sender == admin || isHandler[msg.sender], "NscTimelock: forbidden");
         _;
     }
 
     modifier onlyTokenManager() {
-        require(msg.sender == tokenManager, "KtxTimelock: forbidden");
+        require(msg.sender == tokenManager, "NscTimelock: forbidden");
         _;
     }
 
     modifier onlyRewardManager() {
-        require(msg.sender == rewardManager, "KtxTimelock: forbidden");
+        require(msg.sender == rewardManager, "NscTimelock: forbidden");
         _;
     }
 
@@ -98,8 +98,8 @@ contract KtxTimelock is IKtxTimelock {
         address _mintReceiver,
         uint256 _maxTokenSupply
     ) public {
-        require(_buffer <= MAX_BUFFER, "KtxTimelock: invalid _buffer");
-        require(_longBuffer <= MAX_BUFFER, "KtxTimelock: invalid _longBuffer");
+        require(_buffer <= MAX_BUFFER, "NscTimelock: invalid _buffer");
+        require(_longBuffer <= MAX_BUFFER, "NscTimelock: invalid _longBuffer");
         admin = _admin;
         buffer = _buffer;
         longBuffer = _longBuffer;
@@ -114,7 +114,7 @@ contract KtxTimelock is IKtxTimelock {
     }
 
     function setExternalAdmin(address _target, address _admin) external onlyAdmin {
-        require(_target != address(this), "KtxTimelock: invalid _target");
+        require(_target != address(this), "NscTimelock: invalid _target");
         IAdmin(_target).setAdmin(_admin);
     }
 
@@ -123,19 +123,19 @@ contract KtxTimelock is IKtxTimelock {
     }
 
     function setBuffer(uint256 _buffer) external onlyAdmin {
-        require(_buffer <= MAX_BUFFER, "KtxTimelock: invalid _buffer");
-        require(_buffer > buffer, "KtxTimelock: buffer cannot be decreased");
+        require(_buffer <= MAX_BUFFER, "NscTimelock: invalid _buffer");
+        require(_buffer > buffer, "NscTimelock: buffer cannot be decreased");
         buffer = _buffer;
     }
 
     function setMaxLeverage(address _vault, uint256 _maxLeverage) external onlyAdmin {
-      require(_maxLeverage > MAX_LEVERAGE_VALIDATION, "KtxTimelock: invalid _maxLeverage");
+      require(_maxLeverage > MAX_LEVERAGE_VALIDATION, "NscTimelock: invalid _maxLeverage");
       IVault(_vault).setMaxLeverage(_maxLeverage);
     }
 
     function setFundingRate(address _vault, uint256 _fundingInterval, uint256 _fundingRateFactor, uint256 _stableFundingRateFactor) external onlyAdmin {
-        require(_fundingRateFactor < MAX_FUNDING_RATE_FACTOR, "KtxTimelock: invalid _fundingRateFactor");
-        require(_stableFundingRateFactor < MAX_FUNDING_RATE_FACTOR, "KtxTimelock: invalid _stableFundingRateFactor");
+        require(_fundingRateFactor < MAX_FUNDING_RATE_FACTOR, "NscTimelock: invalid _fundingRateFactor");
+        require(_stableFundingRateFactor < MAX_FUNDING_RATE_FACTOR, "NscTimelock: invalid _stableFundingRateFactor");
         IVault(_vault).setFundingRate(_fundingInterval, _fundingRateFactor, _stableFundingRateFactor);
     }
 
@@ -151,13 +151,13 @@ contract KtxTimelock is IKtxTimelock {
         uint256 _minProfitTime,
         bool _hasDynamicFees
     ) external onlyAdmin {
-        require(_taxBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _taxBasisPoints");
-        require(_stableTaxBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _stableTaxBasisPoints");
-        require(_mintBurnFeeBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _mintBurnFeeBasisPoints");
-        require(_swapFeeBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _swapFeeBasisPoints");
-        require(_stableSwapFeeBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _stableSwapFeeBasisPoints");
-        require(_marginFeeBasisPoints < MAX_FEE_BASIS_POINTS, "KtxTimelock: invalid _marginFeeBasisPoints");
-        require(_liquidationFeeUsd < 10 * PRICE_PRECISION, "KtxTimelock: invalid _liquidationFeeUsd");
+        require(_taxBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _taxBasisPoints");
+        require(_stableTaxBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _stableTaxBasisPoints");
+        require(_mintBurnFeeBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _mintBurnFeeBasisPoints");
+        require(_swapFeeBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _swapFeeBasisPoints");
+        require(_stableSwapFeeBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _stableSwapFeeBasisPoints");
+        require(_marginFeeBasisPoints < MAX_FEE_BASIS_POINTS, "NscTimelock: invalid _marginFeeBasisPoints");
+        require(_liquidationFeeUsd < 10 * PRICE_PRECISION, "NscTimelock: invalid _liquidationFeeUsd");
 
         IVault(_vault).setFees(
             _taxBasisPoints,
@@ -181,10 +181,10 @@ contract KtxTimelock is IKtxTimelock {
         uint256 _bufferAmount,
         uint256 _usdgAmount
     ) external onlyAdmin {
-        require(_minProfitBps <= 500, "KtxTimelock: invalid _minProfitBps");
+        require(_minProfitBps <= 500, "NscTimelock: invalid _minProfitBps");
 
         IVault vault = IVault(_vault);
-        require(vault.whitelistedTokens(_token), "KtxTimelock: token not yet whitelisted");
+        require(vault.whitelistedTokens(_token), "NscTimelock: token not yet whitelisted");
 
         uint256 tokenDecimals = vault.tokenDecimals(_token);
         bool isStable = vault.stableTokens(_token);
@@ -286,7 +286,7 @@ contract KtxTimelock is IKtxTimelock {
     function setInPrivateTransferMode(address _token, bool _inPrivateTransferMode) external onlyAdmin {
         if (excludedTokens[_token]) {
             // excludedTokens can only have their transfers enabled
-            require(_inPrivateTransferMode == false, "KtxTimelock: invalid _inPrivateTransferMode");
+            require(_inPrivateTransferMode == false, "NscTimelock: invalid _inPrivateTransferMode");
         }
 
         IBaseToken(_token).setInPrivateTransferMode(_inPrivateTransferMode);
@@ -537,7 +537,7 @@ contract KtxTimelock is IKtxTimelock {
         }
 
         mintable.mint(_receiver, _amount);
-        require(IERC20(_token).totalSupply() <= maxTokenSupply, "KtxTimelock: maxTokenSupply exceeded");
+        require(IERC20(_token).totalSupply() <= maxTokenSupply, "NscTimelock: maxTokenSupply exceeded");
     }
 
     function _setPendingAction(bytes32 _action) private {
@@ -551,12 +551,12 @@ contract KtxTimelock is IKtxTimelock {
     }
 
     function _validateAction(bytes32 _action) private view {
-        require(pendingActions[_action] != 0, "KtxTimelock: action not signalled");
-        require(pendingActions[_action] < block.timestamp, "KtxTimelock: action time not yet passed");
+        require(pendingActions[_action] != 0, "NscTimelock: action not signalled");
+        require(pendingActions[_action] < block.timestamp, "NscTimelock: action time not yet passed");
     }
 
     function _clearAction(bytes32 _action) private {
-        require(pendingActions[_action] != 0, "KtxTimelock: invalid _action");
+        require(pendingActions[_action] != 0, "NscTimelock: invalid _action");
         delete pendingActions[_action];
         emit ClearAction(_action);
     }

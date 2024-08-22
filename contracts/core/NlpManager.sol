@@ -6,7 +6,7 @@ import "../libraries/token/SafeERC20.sol";
 import "../libraries/utils/ReentrancyGuard.sol";
 
 import "./interfaces/IVault.sol";
-import "./interfaces/IKlpManager.sol";
+import "./interfaces/INlpManager.sol";
 import "./interfaces/IShortsTracker.sol";
 import "../tokens/interfaces/IUSDG.sol";
 import "../tokens/interfaces/IMintable.sol";
@@ -14,20 +14,20 @@ import "../access/Governable.sol";
 
 pragma solidity 0.6.12;
 
-contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
+contract NlpManager is ReentrancyGuard, Governable, INlpManager {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 public constant PRICE_PRECISION = 10 ** 30;
     uint256 public constant USDG_DECIMALS = 18;
-    uint256 public constant KLP_PRECISION = 10 ** 18;
+    uint256 public constant NLP_PRECISION = 10 ** 18;
     uint256 public constant MAX_COOLDOWN_DURATION = 48 hours;
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
 
     IVault public override vault;
     IShortsTracker public shortsTracker;
     address public override usdg;
-    address public override klp;
+    address public override nlp;
 
     uint256 public override cooldownDuration;
     mapping(address => uint256) public override lastAddedAt;
@@ -44,7 +44,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
         address token,
         uint256 amount,
         uint256 aumInUsdg,
-        uint256 klpSupply,
+        uint256 nlpSupply,
         uint256 usdgAmount,
         uint256 mintAmount
     );
@@ -52,9 +52,9 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     event RemoveLiquidity(
         address account,
         address token,
-        uint256 klpAmount,
+        uint256 nlpAmount,
         uint256 aumInUsdg,
-        uint256 klpSupply,
+        uint256 nlpSupply,
         uint256 usdgAmount,
         uint256 amountOut
     );
@@ -62,14 +62,14 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     constructor(
         address _vault,
         address _usdg,
-        address _klp,
+        address _nlp,
         address _shortsTracker,
         uint256 _cooldownDuration
     ) public {
         gov = msg.sender;
         vault = IVault(_vault);
         usdg = _usdg;
-        klp = _klp;
+        nlp = _nlp;
         shortsTracker = IShortsTracker(_shortsTracker);
         cooldownDuration = _cooldownDuration;
     }
@@ -87,7 +87,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     ) external override onlyGov {
         require(
             shortsTrackerAveragePriceWeight <= BASIS_POINTS_DIVISOR,
-            "KlpManager: invalid weight"
+            "NlpManager: invalid weight"
         );
         shortsTrackerAveragePriceWeight = _shortsTrackerAveragePriceWeight;
     }
@@ -101,7 +101,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     ) external override onlyGov {
         require(
             _cooldownDuration <= MAX_COOLDOWN_DURATION,
-            "KlpManager: invalid _cooldownDuration"
+            "NlpManager: invalid _cooldownDuration"
         );
         cooldownDuration = _cooldownDuration;
     }
@@ -118,10 +118,10 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
         address _token,
         uint256 _amount,
         uint256 _minUsdg,
-        uint256 _minKlp
+        uint256 _minNlp
     ) external override nonReentrant returns (uint256) {
         if (inPrivateMode) {
-            revert("KlpManager: action not enabled");
+            revert("NlpManager: action not enabled");
         }
         return
             _addLiquidity(
@@ -130,7 +130,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
                 _token,
                 _amount,
                 _minUsdg,
-                _minKlp
+                _minNlp
             );
     }
 
@@ -140,7 +140,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
         address _token,
         uint256 _amount,
         uint256 _minUsdg,
-        uint256 _minKlp
+        uint256 _minNlp
     ) external override nonReentrant returns (uint256) {
         _validateHandler();
         return
@@ -150,24 +150,24 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
                 _token,
                 _amount,
                 _minUsdg,
-                _minKlp
+                _minNlp
             );
     }
 
     function removeLiquidity(
         address _tokenOut,
-        uint256 _klpAmount,
+        uint256 _nlpAmount,
         uint256 _minOut,
         address _receiver
     ) external override nonReentrant returns (uint256) {
         if (inPrivateMode) {
-            revert("KlpManager: action not enabled");
+            revert("NlpManager: action not enabled");
         }
         return
             _removeLiquidity(
                 msg.sender,
                 _tokenOut,
-                _klpAmount,
+                _nlpAmount,
                 _minOut,
                 _receiver
             );
@@ -176,7 +176,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     function removeLiquidityForAccount(
         address _account,
         address _tokenOut,
-        uint256 _klpAmount,
+        uint256 _nlpAmount,
         uint256 _minOut,
         address _receiver
     ) external override nonReentrant returns (uint256) {
@@ -185,7 +185,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
             _removeLiquidity(
                 _account,
                 _tokenOut,
-                _klpAmount,
+                _nlpAmount,
                 _minOut,
                 _receiver
             );
@@ -193,8 +193,8 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
 
     function getPrice(bool _maximise) external view returns (uint256) {
         uint256 aum = getAum(_maximise);
-        uint256 supply = IERC20(klp).totalSupply();
-        return aum.mul(KLP_PRECISION).div(supply);
+        uint256 supply = IERC20(nlp).totalSupply();
+        return aum.mul(NLP_PRECISION).div(supply);
     }
 
     function getAums() public view returns (uint256[] memory) {
@@ -318,13 +318,13 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
         address _token,
         uint256 _amount,
         uint256 _minUsdg,
-        uint256 _minKlp
+        uint256 _minNlp
     ) private returns (uint256) {
-        require(_amount > 0, "KlpManager: invalid _amount");
+        require(_amount > 0, "NlpManager: invalid _amount");
 
         // calculate aum before buyUSDG
         uint256 aumInUsdg = getAumInUsdg(true);
-        uint256 klpSupply = IERC20(klp).totalSupply();
+        uint256 nlpSupply = IERC20(nlp).totalSupply();
 
         IERC20(_token).safeTransferFrom(
             _fundingAccount,
@@ -332,14 +332,14 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
             _amount
         );
         uint256 usdgAmount = vault.buyUSDG(_token, address(this));
-        require(usdgAmount >= _minUsdg, "KlpManager: insufficient USDG output");
+        require(usdgAmount >= _minUsdg, "NlpManager: insufficient USDG output");
 
         uint256 mintAmount = aumInUsdg == 0
             ? usdgAmount
-            : usdgAmount.mul(klpSupply).div(aumInUsdg);
-        require(mintAmount >= _minKlp, "KlpManager: insufficient KLP output");
+            : usdgAmount.mul(nlpSupply).div(aumInUsdg);
+        require(mintAmount >= _minNlp, "NlpManager: insufficient NLP output");
 
-        IMintable(klp).mint(_account, mintAmount);
+        IMintable(nlp).mint(_account, mintAmount);
 
         lastAddedAt[_account] = block.timestamp;
 
@@ -348,7 +348,7 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
             _token,
             _amount,
             aumInUsdg,
-            klpSupply,
+            nlpSupply,
             usdgAmount,
             mintAmount
         );
@@ -359,38 +359,38 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     function _removeLiquidity(
         address _account,
         address _tokenOut,
-        uint256 _klpAmount,
+        uint256 _nlpAmount,
         uint256 _minOut,
         address _receiver
     ) private returns (uint256) {
-        require(_klpAmount > 0, "KlpManager: invalid _klpAmount");
+        require(_nlpAmount > 0, "NlpManager: invalid _nlpAmount");
         require(
             lastAddedAt[_account].add(cooldownDuration) <= block.timestamp,
-            "KlpManager: cooldown duration not yet passed"
+            "NlpManager: cooldown duration not yet passed"
         );
 
         // calculate aum before sellUSDG
         uint256 aumInUsdg = getAumInUsdg(false);
-        uint256 klpSupply = IERC20(klp).totalSupply();
+        uint256 nlpSupply = IERC20(nlp).totalSupply();
 
-        uint256 usdgAmount = _klpAmount.mul(aumInUsdg).div(klpSupply);
+        uint256 usdgAmount = _nlpAmount.mul(aumInUsdg).div(nlpSupply);
         uint256 usdgBalance = IERC20(usdg).balanceOf(address(this));
         if (usdgAmount > usdgBalance) {
             IUSDG(usdg).mint(address(this), usdgAmount.sub(usdgBalance));
         }
 
-        IMintable(klp).burn(_account, _klpAmount);
+        IMintable(nlp).burn(_account, _nlpAmount);
 
         IERC20(usdg).transfer(address(vault), usdgAmount);
         uint256 amountOut = vault.sellUSDG(_tokenOut, _receiver);
-        require(amountOut >= _minOut, "KlpManager: insufficient output");
+        require(amountOut >= _minOut, "NlpManager: insufficient output");
 
         emit RemoveLiquidity(
             _account,
             _tokenOut,
-            _klpAmount,
+            _nlpAmount,
             aumInUsdg,
-            klpSupply,
+            nlpSupply,
             usdgAmount,
             amountOut
         );
@@ -399,6 +399,6 @@ contract KlpManager is ReentrancyGuard, Governable, IKlpManager {
     }
 
     function _validateHandler() private view {
-        require(isHandler[msg.sender], "KlpManager: forbidden");
+        require(isHandler[msg.sender], "NlpManager: forbidden");
     }
 }
