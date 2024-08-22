@@ -40,8 +40,8 @@ describe("Vault.liquidateLongPosition", function () {
   let distributor0;
   let yieldTracker0;
 
-  let klpManager;
-  let klp;
+  let nlpManager;
+  let nlp;
 
   beforeEach(async () => {
     bnb = await deployContract("Token", []);
@@ -103,16 +103,16 @@ describe("Vault.liquidateLongPosition", function () {
       false
     );
 
-    klp = await deployContract("KLP", []);
+    nlp = await deployContract("NLP", []);
     let shortsTracker = await await deployContract(
       "ShortsTracker",
       [vault.address],
       "ShortsTracker"
     );
-    klpManager = await deployContract("KlpManager", [
+    nlpManager = await deployContract("NlpManager", [
       vault.address,
       usdg.address,
-      klp.address,
+      nlp.address,
       shortsTracker.address,
       24 * 60 * 60,
     ]);
@@ -147,8 +147,8 @@ describe("Vault.liquidateLongPosition", function () {
     await btc.mint(user0.address, expandDecimals(1, 8));
     await btc.connect(user1).transfer(vault.address, 25000); // 0.00025 BTC => 10 USD
 
-    expect(await klpManager.getAumInUsdg(false)).eq("99700000000000000000"); // 99.7
-    expect(await klpManager.getAumInUsdg(true)).eq("102192500000000000000"); // 102.1925
+    expect(await nlpManager.getAumInUsdg(false)).eq("99700000000000000000"); // 99.7
+    expect(await nlpManager.getAumInUsdg(true)).eq("102192500000000000000"); // 102.1925
 
     await vault
       .connect(user0)
@@ -160,8 +160,8 @@ describe("Vault.liquidateLongPosition", function () {
         true
       );
 
-    expect(await klpManager.getAumInUsdg(false)).eq("99702400000000000000"); // 99.7024
-    expect(await klpManager.getAumInUsdg(true)).eq("100192710000000000000"); // 100.19271
+    expect(await nlpManager.getAumInUsdg(false)).eq("99702400000000000000"); // 99.7024
+    expect(await nlpManager.getAumInUsdg(true)).eq("100192710000000000000"); // 100.19271
 
     let position = await vault.getPosition(
       user0.address,
@@ -301,8 +301,8 @@ describe("Vault.liquidateLongPosition", function () {
     await vault.setLiquidator(user1.address, true);
     expect(await vault.isLiquidator(user1.address)).eq(true);
 
-    expect(await klpManager.getAumInUsdg(false)).eq("99064997000000000000"); // 99.064997
-    expect(await klpManager.getAumInUsdg(true)).eq("101418485000000000000"); // 101.418485
+    expect(await nlpManager.getAumInUsdg(false)).eq("99064997000000000000"); // 99.064997
+    expect(await nlpManager.getAumInUsdg(true)).eq("101418485000000000000"); // 101.418485
 
     const tx = await vault
       .connect(user1)
@@ -315,8 +315,8 @@ describe("Vault.liquidateLongPosition", function () {
       );
     await reportGasUsed(provider, tx, "liquidatePosition gas used");
 
-    expect(await klpManager.getAumInUsdg(false)).eq("101522097000000000000"); // 101.522097
-    expect(await klpManager.getAumInUsdg(true)).eq("114113985000000000000"); // 114.113985
+    expect(await nlpManager.getAumInUsdg(false)).eq("101522097000000000000"); // 101.522097
+    expect(await nlpManager.getAumInUsdg(true)).eq("114113985000000000000"); // 114.113985
 
     position = await vault.getPosition(
       user0.address,

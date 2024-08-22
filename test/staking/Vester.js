@@ -20,42 +20,42 @@ const { AddressZero } = ethers.constants;
 describe("Vester", function () {
   const provider = waffle.provider;
   const [wallet, user0, user1, user2, user3, user4] = provider.getWallets();
-  let ktx;
-  let esKtx;
-  let bnKtx;
+  let nsc;
+  let esNsc;
+  let bnNsc;
   let eth;
 
   beforeEach(async () => {
-    ktx = await deployContract("KTX", []);
-    esKtx = await deployContract("EsKTX", []);
-    bnKtx = await deployContract("MintableBaseToken", [
-      "Bonus KTX",
-      "bnKTX",
+    nsc = await deployContract("NSC", []);
+    esNsc = await deployContract("EsNSC", []);
+    bnNsc = await deployContract("MintableBaseToken", [
+      "Bonus NSC",
+      "bnNSC",
       0,
     ]);
     eth = await deployContract("Token", []);
 
-    await esKtx.setMinter(wallet.address, true);
-    await ktx.setMinter(wallet.address, true);
+    await esNsc.setMinter(wallet.address, true);
+    await nsc.setMinter(wallet.address, true);
   });
 
   it("inits", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
 
-    expect(await vester.name()).eq("Vested KTX");
-    expect(await vester.symbol()).eq("veKTX");
+    expect(await vester.name()).eq("Vested NSC");
+    expect(await vester.symbol()).eq("veNSC");
     expect(await vester.vestingDuration()).eq(secondsPerYear);
-    expect(await vester.esToken()).eq(esKtx.address);
+    expect(await vester.esToken()).eq(esNsc.address);
     expect(await vester.pairToken()).eq(AddressZero);
-    expect(await vester.claimableToken()).eq(ktx.address);
+    expect(await vester.claimableToken()).eq(nsc.address);
     expect(await vester.rewardTracker()).eq(AddressZero);
     expect(await vester.hasPairToken()).eq(false);
     expect(await vester.hasRewardTracker()).eq(false);
@@ -64,12 +64,12 @@ describe("Vester", function () {
 
   it("setTransferredAverageStakedAmounts", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
 
@@ -86,12 +86,12 @@ describe("Vester", function () {
 
   it("setTransferredCumulativeRewards", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
 
@@ -108,12 +108,12 @@ describe("Vester", function () {
 
   it("setCumulativeRewardDeductions", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
 
@@ -130,12 +130,12 @@ describe("Vester", function () {
 
   it("setBonusRewards", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
 
@@ -152,15 +152,15 @@ describe("Vester", function () {
 
   it("deposit, claim, withdraw", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
-    await esKtx.setMinter(vester.address, true);
+    await esNsc.setMinter(vester.address, true);
 
     await expect(vester.connect(user0).deposit(0)).to.be.revertedWith(
       "Vester: invalid _amount"
@@ -170,7 +170,7 @@ describe("Vester", function () {
       vester.connect(user0).deposit(expandDecimals(1000, 18))
     ).to.be.revertedWith("BaseToken: transfer amount exceeds allowance");
 
-    await esKtx
+    await esNsc
       .connect(user0)
       .approve(vester.address, expandDecimals(1000, 18));
 
@@ -186,7 +186,7 @@ describe("Vester", function () {
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(0);
 
-    await esKtx.mint(user0.address, expandDecimals(1000, 18));
+    await esNsc.mint(user0.address, expandDecimals(1000, 18));
     await vester.connect(user0).deposit(expandDecimals(1000, 18));
 
     let blockTime = await getBlockTime(provider);
@@ -204,8 +204,8 @@ describe("Vester", function () {
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).eq(0);
     expect(await vester.balanceOf(user0.address)).eq(expandDecimals(1000, 18));
     expect(await vester.getTotalVested(user0.address)).eq(
       expandDecimals(1000, 18)
@@ -221,25 +221,25 @@ describe("Vester", function () {
       "BaseToken: transfer amount exceeds balance"
     );
 
-    await ktx.mint(vester.address, expandDecimals(2000, 18));
+    await nsc.mint(vester.address, expandDecimals(2000, 18));
 
     await vester.connect(user0).claim();
     blockTime = await getBlockTime(provider);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).gt("2730000000000000000");
-    expect(await ktx.balanceOf(user0.address)).lt("2750000000000000000");
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).gt("2730000000000000000");
+    expect(await nsc.balanceOf(user0.address)).lt("2750000000000000000");
 
-    let ktxAmount = await ktx.balanceOf(user0.address);
+    let nscAmount = await nsc.balanceOf(user0.address);
     expect(await vester.balanceOf(user0.address)).eq(
-      expandDecimals(1000, 18).sub(ktxAmount)
+      expandDecimals(1000, 18).sub(nscAmount)
     );
 
     expect(await vester.getTotalVested(user0.address)).eq(
       expandDecimals(1000, 18)
     );
-    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(ktxAmount);
-    expect(await vester.claimedAmounts(user0.address)).eq(ktxAmount);
+    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(nscAmount);
+    expect(await vester.claimedAmounts(user0.address)).eq(nscAmount);
     expect(await vester.claimable(user0.address)).eq(0);
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(blockTime);
@@ -247,36 +247,36 @@ describe("Vester", function () {
     await increaseTime(provider, 48 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(ktxAmount);
-    expect(await vester.claimedAmounts(user0.address)).eq(ktxAmount);
+    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(nscAmount);
+    expect(await vester.claimedAmounts(user0.address)).eq(nscAmount);
     expect(await vester.claimable(user0.address)).gt("5478000000000000000"); // 1000 / 365 * 2 => ~5.479
     expect(await vester.claimable(user0.address)).lt("5480000000000000000");
 
     await increaseTime(provider, parseInt(365 / 2 - 1) * 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(ktxAmount);
-    expect(await vester.claimedAmounts(user0.address)).eq(ktxAmount);
+    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(nscAmount);
+    expect(await vester.claimedAmounts(user0.address)).eq(nscAmount);
     expect(await vester.claimable(user0.address)).gt(expandDecimals(500, 18)); // 1000 / 2 => 500
     expect(await vester.claimable(user0.address)).lt(expandDecimals(502, 18));
 
     await vester.connect(user0).claim();
     blockTime = await getBlockTime(provider);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).gt(expandDecimals(503, 18));
-    expect(await ktx.balanceOf(user0.address)).lt(expandDecimals(505, 18));
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).gt(expandDecimals(503, 18));
+    expect(await nsc.balanceOf(user0.address)).lt(expandDecimals(505, 18));
 
-    ktxAmount = await ktx.balanceOf(user0.address);
+    nscAmount = await nsc.balanceOf(user0.address);
     expect(await vester.balanceOf(user0.address)).eq(
-      expandDecimals(1000, 18).sub(ktxAmount)
+      expandDecimals(1000, 18).sub(nscAmount)
     );
 
     expect(await vester.getTotalVested(user0.address)).eq(
       expandDecimals(1000, 18)
     );
-    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(ktxAmount);
-    expect(await vester.claimedAmounts(user0.address)).eq(ktxAmount);
+    expect(await vester.cumulativeClaimAmounts(user0.address)).eq(nscAmount);
+    expect(await vester.claimedAmounts(user0.address)).eq(nscAmount);
     expect(await vester.claimable(user0.address)).eq(0);
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(blockTime);
@@ -288,8 +288,8 @@ describe("Vester", function () {
     expect(await vester.claimable(user0.address)).gt("2730000000000000000"); // 1000 / 365 => ~2.739
     expect(await vester.claimable(user0.address)).lt("2750000000000000000");
 
-    await esKtx.mint(user0.address, expandDecimals(500, 18));
-    await esKtx.connect(user0).approve(vester.address, expandDecimals(500, 18));
+    await esNsc.mint(user0.address, expandDecimals(500, 18));
+    await esNsc.connect(user0).approve(vester.address, expandDecimals(500, 18));
     await vester.connect(user0).deposit(expandDecimals(500, 18));
 
     await increaseTime(provider, 24 * 60 * 60);
@@ -298,15 +298,15 @@ describe("Vester", function () {
     expect(await vester.claimable(user0.address)).gt("6840000000000000000"); // 1000 / 365 + 1500 / 365 => 6.849
     expect(await vester.claimable(user0.address)).lt("6860000000000000000");
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).eq(ktxAmount);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).eq(nscAmount);
 
     await vester.connect(user0).withdraw();
 
-    expect(await esKtx.balanceOf(user0.address)).gt(expandDecimals(989, 18));
-    expect(await esKtx.balanceOf(user0.address)).lt(expandDecimals(990, 18));
-    expect(await ktx.balanceOf(user0.address)).gt(expandDecimals(510, 18));
-    expect(await ktx.balanceOf(user0.address)).lt(expandDecimals(512, 18));
+    expect(await esNsc.balanceOf(user0.address)).gt(expandDecimals(989, 18));
+    expect(await esNsc.balanceOf(user0.address)).lt(expandDecimals(990, 18));
+    expect(await nsc.balanceOf(user0.address)).gt(expandDecimals(510, 18));
+    expect(await nsc.balanceOf(user0.address)).lt(expandDecimals(512, 18));
 
     expect(await vester.balanceOf(user0.address)).eq(0);
     expect(await vester.getTotalVested(user0.address)).eq(0);
@@ -316,10 +316,10 @@ describe("Vester", function () {
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(0);
 
-    await esKtx
+    await esNsc
       .connect(user0)
       .approve(vester.address, expandDecimals(1000, 18));
-    await esKtx.mint(user0.address, expandDecimals(1000, 18));
+    await esNsc.mint(user0.address, expandDecimals(1000, 18));
     await vester.connect(user0).deposit(expandDecimals(1000, 18));
     blockTime = await getBlockTime(provider);
 
@@ -342,18 +342,18 @@ describe("Vester", function () {
 
   it("depositForAccount, claimForAccount", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
-    await esKtx.setMinter(vester.address, true);
+    await esNsc.setMinter(vester.address, true);
     await vester.setHandler(wallet.address, true);
 
-    await esKtx
+    await esNsc
       .connect(user0)
       .approve(vester.address, expandDecimals(1000, 18));
 
@@ -365,7 +365,7 @@ describe("Vester", function () {
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(0);
 
-    await esKtx.mint(user0.address, expandDecimals(1000, 18));
+    await esNsc.mint(user0.address, expandDecimals(1000, 18));
 
     await expect(
       vester
@@ -393,8 +393,8 @@ describe("Vester", function () {
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).eq(0);
     expect(await vester.balanceOf(user0.address)).eq(expandDecimals(1000, 18));
     expect(await vester.getTotalVested(user0.address)).eq(
       expandDecimals(1000, 18)
@@ -410,7 +410,7 @@ describe("Vester", function () {
       "BaseToken: transfer amount exceeds balance"
     );
 
-    await ktx.mint(vester.address, expandDecimals(2000, 18));
+    await nsc.mint(vester.address, expandDecimals(2000, 18));
 
     await expect(
       vester.connect(user3).claimForAccount(user0.address, user4.address)
@@ -421,12 +421,12 @@ describe("Vester", function () {
     await vester.connect(user3).claimForAccount(user0.address, user4.address);
     blockTime = await getBlockTime(provider);
 
-    expect(await esKtx.balanceOf(user4.address)).eq(0);
-    expect(await ktx.balanceOf(user4.address)).gt("2730000000000000000");
-    expect(await ktx.balanceOf(user4.address)).lt("2750000000000000000");
+    expect(await esNsc.balanceOf(user4.address)).eq(0);
+    expect(await nsc.balanceOf(user4.address)).gt("2730000000000000000");
+    expect(await nsc.balanceOf(user4.address)).lt("2750000000000000000");
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).eq(0);
     expect(await vester.balanceOf(user0.address)).gt(expandDecimals(996, 18));
     expect(await vester.balanceOf(user0.address)).lt(expandDecimals(998, 18));
     expect(await vester.getTotalVested(user0.address)).eq(
@@ -451,18 +451,18 @@ describe("Vester", function () {
 
   it("handles multiple deposits", async () => {
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
+      esNsc.address,
       AddressZero,
-      ktx.address,
+      nsc.address,
       AddressZero,
     ]);
-    await esKtx.setMinter(vester.address, true);
+    await esNsc.setMinter(vester.address, true);
     await vester.setHandler(wallet.address, true);
 
-    await esKtx
+    await esNsc
       .connect(user0)
       .approve(vester.address, expandDecimals(1000, 18));
 
@@ -474,7 +474,7 @@ describe("Vester", function () {
     expect(await vester.pairAmounts(user0.address)).eq(0);
     expect(await vester.lastVestingTimes(user0.address)).eq(0);
 
-    await esKtx.mint(user0.address, expandDecimals(1000, 18));
+    await esNsc.mint(user0.address, expandDecimals(1000, 18));
     await vester.connect(user0).deposit(expandDecimals(1000, 18));
 
     let blockTime = await getBlockTime(provider);
@@ -492,8 +492,8 @@ describe("Vester", function () {
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await ktx.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await nsc.balanceOf(user0.address)).eq(0);
     expect(await vester.balanceOf(user0.address)).eq(expandDecimals(1000, 18));
     expect(await vester.getTotalVested(user0.address)).eq(
       expandDecimals(1000, 18)
@@ -509,15 +509,15 @@ describe("Vester", function () {
       "BaseToken: transfer amount exceeds balance"
     );
 
-    await ktx.mint(vester.address, expandDecimals(2000, 18));
+    await nsc.mint(vester.address, expandDecimals(2000, 18));
 
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
     expect(await vester.balanceOf(user0.address)).eq(expandDecimals(1000, 18));
 
-    await esKtx.mint(user0.address, expandDecimals(500, 18));
-    await esKtx.connect(user0).approve(vester.address, expandDecimals(500, 18));
+    await esNsc.mint(user0.address, expandDecimals(500, 18));
+    await esNsc.connect(user0).approve(vester.address, expandDecimals(500, 18));
     await vester.connect(user0).deposit(expandDecimals(500, 18));
     blockTime = await getBlockTime(provider);
 
@@ -540,10 +540,10 @@ describe("Vester", function () {
 
     await vester.connect(user0).withdraw();
 
-    expect(await esKtx.balanceOf(user0.address)).gt(expandDecimals(1494, 18));
-    expect(await esKtx.balanceOf(user0.address)).lt(expandDecimals(1496, 18));
-    expect(await ktx.balanceOf(user0.address)).gt("5470000000000000000");
-    expect(await ktx.balanceOf(user0.address)).lt("5490000000000000000");
+    expect(await esNsc.balanceOf(user0.address)).gt(expandDecimals(1494, 18));
+    expect(await esNsc.balanceOf(user0.address)).lt(expandDecimals(1496, 18));
+    expect(await nsc.balanceOf(user0.address)).gt("5470000000000000000");
+    expect(await nsc.balanceOf(user0.address)).lt("5490000000000000000");
     expect(await vester.balanceOf(user0.address)).eq(0);
     expect(await vester.getTotalVested(user0.address)).eq(0);
     expect(await vester.cumulativeClaimAmounts(user0.address)).eq(0); // 5.47, 1000 / 365 * 2 => ~5.48
@@ -554,73 +554,73 @@ describe("Vester", function () {
   });
 
   it("handles pairing", async () => {
-    stakedKtxTracker = await deployContract("RewardTracker", [
-      "Staked KTX",
-      "sKTX",
+    stakedNscTracker = await deployContract("RewardTracker", [
+      "Staked NSC",
+      "sNSC",
     ]);
-    stakedKtxDistributor = await deployContract("RewardDistributor", [
-      esKtx.address,
-      stakedKtxTracker.address,
+    stakedNscDistributor = await deployContract("RewardDistributor", [
+      esNsc.address,
+      stakedNscTracker.address,
     ]);
-    await stakedKtxTracker.initialize(
-      [ktx.address, esKtx.address],
-      stakedKtxDistributor.address
+    await stakedNscTracker.initialize(
+      [nsc.address, esNsc.address],
+      stakedNscDistributor.address
     );
-    await stakedKtxDistributor.updateLastDistributionTime();
+    await stakedNscDistributor.updateLastDistributionTime();
 
-    bonusKtxTracker = await deployContract("RewardTracker", [
-      "Staked + Bonus KTX",
-      "sbKTX",
+    bonusNscTracker = await deployContract("RewardTracker", [
+      "Staked + Bonus NSC",
+      "sbNSC",
     ]);
-    bonusKtxDistributor = await deployContract("BonusDistributor", [
-      bnKtx.address,
-      bonusKtxTracker.address,
+    bonusNscDistributor = await deployContract("BonusDistributor", [
+      bnNsc.address,
+      bonusNscTracker.address,
     ]);
-    await bonusKtxTracker.initialize(
-      [stakedKtxTracker.address],
-      bonusKtxDistributor.address
+    await bonusNscTracker.initialize(
+      [stakedNscTracker.address],
+      bonusNscDistributor.address
     );
-    await bonusKtxDistributor.updateLastDistributionTime();
+    await bonusNscDistributor.updateLastDistributionTime();
 
-    feeKtxTracker = await deployContract("RewardTracker", [
-      "Staked + Bonus + Fee KTX",
-      "sbfKTX",
+    feeNscTracker = await deployContract("RewardTracker", [
+      "Staked + Bonus + Fee NSC",
+      "sbfNSC",
     ]);
-    feeKtxDistributor = await deployContract("RewardDistributor", [
+    feeNscDistributor = await deployContract("RewardDistributor", [
       eth.address,
-      feeKtxTracker.address,
+      feeNscTracker.address,
     ]);
-    await feeKtxTracker.initialize(
-      [bonusKtxTracker.address, bnKtx.address],
-      feeKtxDistributor.address
+    await feeNscTracker.initialize(
+      [bonusNscTracker.address, bnNsc.address],
+      feeNscDistributor.address
     );
-    await feeKtxDistributor.updateLastDistributionTime();
+    await feeNscDistributor.updateLastDistributionTime();
 
-    await stakedKtxTracker.setInPrivateTransferMode(true);
-    await stakedKtxTracker.setInPrivateStakingMode(true);
-    await bonusKtxTracker.setInPrivateTransferMode(true);
-    await bonusKtxTracker.setInPrivateStakingMode(true);
-    await bonusKtxTracker.setInPrivateClaimingMode(true);
-    await feeKtxTracker.setInPrivateTransferMode(true);
-    await feeKtxTracker.setInPrivateStakingMode(true);
+    await stakedNscTracker.setInPrivateTransferMode(true);
+    await stakedNscTracker.setInPrivateStakingMode(true);
+    await bonusNscTracker.setInPrivateTransferMode(true);
+    await bonusNscTracker.setInPrivateStakingMode(true);
+    await bonusNscTracker.setInPrivateClaimingMode(true);
+    await feeNscTracker.setInPrivateTransferMode(true);
+    await feeNscTracker.setInPrivateStakingMode(true);
 
-    await esKtx.setMinter(wallet.address, true);
-    await esKtx.mint(
-      stakedKtxDistributor.address,
+    await esNsc.setMinter(wallet.address, true);
+    await esNsc.mint(
+      stakedNscDistributor.address,
       expandDecimals(50000 * 12, 18)
     );
-    await stakedKtxDistributor.setTokensPerInterval("20667989410000000"); // 0.02066798941 esKtx per second
+    await stakedNscDistributor.setTokensPerInterval("20667989410000000"); // 0.02066798941 esNsc per second
 
     const rewardRouter = await deployContract("RewardRouter", []);
     await rewardRouter.initialize(
       eth.address,
-      ktx.address,
-      esKtx.address,
-      bnKtx.address,
+      nsc.address,
+      esNsc.address,
+      bnNsc.address,
       AddressZero,
-      stakedKtxTracker.address,
-      bonusKtxTracker.address,
-      feeKtxTracker.address,
+      stakedNscTracker.address,
+      bonusNscTracker.address,
+      feeNscTracker.address,
       AddressZero,
       AddressZero,
       AddressZero,
@@ -628,99 +628,99 @@ describe("Vester", function () {
       AddressZero
     );
 
-    // allow rewardRouter to stake in stakedKtxTracker
-    await stakedKtxTracker.setHandler(rewardRouter.address, true);
-    // allow bonusKtxTracker to stake stakedKtxTracker
-    await stakedKtxTracker.setHandler(bonusKtxTracker.address, true);
-    // allow rewardRouter to stake in bonusKtxTracker
-    await bonusKtxTracker.setHandler(rewardRouter.address, true);
-    // allow bonusKtxTracker to stake feeKtxTracker
-    await bonusKtxTracker.setHandler(feeKtxTracker.address, true);
-    await bonusKtxDistributor.setBonusMultiplier(10000);
-    // allow rewardRouter to stake in feeKtxTracker
-    await feeKtxTracker.setHandler(rewardRouter.address, true);
-    // allow stakedKtxTracker to stake esKtx
-    await esKtx.setHandler(stakedKtxTracker.address, true);
-    // allow feeKtxTracker to stake bnKtx
-    await bnKtx.setHandler(feeKtxTracker.address, true);
-    // allow rewardRouter to burn bnKtx
-    await bnKtx.setMinter(rewardRouter.address, true);
+    // allow rewardRouter to stake in stakedNscTracker
+    await stakedNscTracker.setHandler(rewardRouter.address, true);
+    // allow bonusNscTracker to stake stakedNscTracker
+    await stakedNscTracker.setHandler(bonusNscTracker.address, true);
+    // allow rewardRouter to stake in bonusNscTracker
+    await bonusNscTracker.setHandler(rewardRouter.address, true);
+    // allow bonusNscTracker to stake feeNscTracker
+    await bonusNscTracker.setHandler(feeNscTracker.address, true);
+    await bonusNscDistributor.setBonusMultiplier(10000);
+    // allow rewardRouter to stake in feeNscTracker
+    await feeNscTracker.setHandler(rewardRouter.address, true);
+    // allow stakedNscTracker to stake esNsc
+    await esNsc.setHandler(stakedNscTracker.address, true);
+    // allow feeNscTracker to stake bnNsc
+    await bnNsc.setHandler(feeNscTracker.address, true);
+    // allow rewardRouter to burn bnNsc
+    await bnNsc.setMinter(rewardRouter.address, true);
 
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
-      feeKtxTracker.address,
-      ktx.address,
-      stakedKtxTracker.address,
+      esNsc.address,
+      feeNscTracker.address,
+      nsc.address,
+      stakedNscTracker.address,
     ]);
-    await esKtx.setMinter(vester.address, true);
+    await esNsc.setMinter(vester.address, true);
     await vester.setHandler(wallet.address, true);
 
-    expect(await vester.name()).eq("Vested KTX");
-    expect(await vester.symbol()).eq("veKTX");
+    expect(await vester.name()).eq("Vested NSC");
+    expect(await vester.symbol()).eq("veNSC");
     expect(await vester.vestingDuration()).eq(secondsPerYear);
-    expect(await vester.esToken()).eq(esKtx.address);
-    expect(await vester.pairToken()).eq(feeKtxTracker.address);
-    expect(await vester.claimableToken()).eq(ktx.address);
-    expect(await vester.rewardTracker()).eq(stakedKtxTracker.address);
+    expect(await vester.esToken()).eq(esNsc.address);
+    expect(await vester.pairToken()).eq(feeNscTracker.address);
+    expect(await vester.claimableToken()).eq(nsc.address);
+    expect(await vester.rewardTracker()).eq(stakedNscTracker.address);
     expect(await vester.hasPairToken()).eq(true);
     expect(await vester.hasRewardTracker()).eq(true);
     expect(await vester.hasMaxVestableAmount()).eq(true);
 
-    // allow vester to transfer feeKtxTracker tokens
-    await feeKtxTracker.setHandler(vester.address, true);
-    // allow vester to transfer esKtx tokens
-    await esKtx.setHandler(vester.address, true);
+    // allow vester to transfer feeNscTracker tokens
+    await feeNscTracker.setHandler(vester.address, true);
+    // allow vester to transfer esNsc tokens
+    await esNsc.setHandler(vester.address, true);
 
-    await ktx.mint(vester.address, expandDecimals(2000, 18));
+    await nsc.mint(vester.address, expandDecimals(2000, 18));
 
-    await ktx.mint(user0.address, expandDecimals(1000, 18));
-    await ktx.mint(user1.address, expandDecimals(500, 18));
-    await ktx
+    await nsc.mint(user0.address, expandDecimals(1000, 18));
+    await nsc.mint(user1.address, expandDecimals(500, 18));
+    await nsc
       .connect(user0)
-      .approve(stakedKtxTracker.address, expandDecimals(1000, 18));
-    await ktx
+      .approve(stakedNscTracker.address, expandDecimals(1000, 18));
+    await nsc
       .connect(user1)
-      .approve(stakedKtxTracker.address, expandDecimals(500, 18));
+      .approve(stakedNscTracker.address, expandDecimals(500, 18));
 
-    await rewardRouter.connect(user0).stakeKtx(expandDecimals(1000, 18));
-    await rewardRouter.connect(user1).stakeKtx(expandDecimals(500, 18));
+    await rewardRouter.connect(user0).stakeNsc(expandDecimals(1000, 18));
+    await rewardRouter.connect(user1).stakeNsc(expandDecimals(500, 18));
 
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await stakedKtxTracker.claimable(user0.address)).gt(
+    expect(await stakedNscTracker.claimable(user0.address)).gt(
       expandDecimals(1190, 18)
     );
-    expect(await stakedKtxTracker.claimable(user0.address)).lt(
+    expect(await stakedNscTracker.claimable(user0.address)).lt(
       expandDecimals(1191, 18)
     );
-    expect(await stakedKtxTracker.claimable(user1.address)).gt(
+    expect(await stakedNscTracker.claimable(user1.address)).gt(
       expandDecimals(594, 18)
     );
-    expect(await stakedKtxTracker.claimable(user1.address)).lt(
+    expect(await stakedNscTracker.claimable(user1.address)).lt(
       expandDecimals(596, 18)
     );
 
     expect(await vester.getMaxVestableAmount(user0.address)).eq(0);
     expect(await vester.getMaxVestableAmount(user1.address)).eq(0);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await esKtx.balanceOf(user1.address)).eq(0);
-    expect(await esKtx.balanceOf(user2.address)).eq(0);
-    expect(await esKtx.balanceOf(user3.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user1.address)).eq(0);
+    expect(await esNsc.balanceOf(user2.address)).eq(0);
+    expect(await esNsc.balanceOf(user3.address)).eq(0);
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
-    await stakedKtxTracker.connect(user1).claim(user3.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user1).claim(user3.address);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await esKtx.balanceOf(user1.address)).eq(0);
-    expect(await esKtx.balanceOf(user2.address)).gt(expandDecimals(1190, 18));
-    expect(await esKtx.balanceOf(user2.address)).lt(expandDecimals(1191, 18));
-    expect(await esKtx.balanceOf(user3.address)).gt(expandDecimals(594, 18));
-    expect(await esKtx.balanceOf(user3.address)).lt(expandDecimals(596, 18));
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user1.address)).eq(0);
+    expect(await esNsc.balanceOf(user2.address)).gt(expandDecimals(1190, 18));
+    expect(await esNsc.balanceOf(user2.address)).lt(expandDecimals(1191, 18));
+    expect(await esNsc.balanceOf(user3.address)).gt(expandDecimals(594, 18));
+    expect(await esNsc.balanceOf(user3.address)).lt(expandDecimals(596, 18));
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(1190, 18)
@@ -759,8 +759,8 @@ describe("Vester", function () {
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
-    await stakedKtxTracker.connect(user1).claim(user3.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user1).claim(user3.address);
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(2380, 18)
@@ -788,57 +788,57 @@ describe("Vester", function () {
       "430000000000000000"
     ); // 0.43
 
-    await esKtx.mint(user0.address, expandDecimals(2385, 18));
+    await esNsc.mint(user0.address, expandDecimals(2385, 18));
     await expect(
       vester.connect(user0).deposit(expandDecimals(2385, 18))
     ).to.be.revertedWith("RewardTracker: transfer amount exceeds balance");
 
-    await ktx.mint(user0.address, expandDecimals(500, 18));
-    await ktx
+    await nsc.mint(user0.address, expandDecimals(500, 18));
+    await nsc
       .connect(user0)
-      .approve(stakedKtxTracker.address, expandDecimals(500, 18));
-    await rewardRouter.connect(user0).stakeKtx(expandDecimals(500, 18));
+      .approve(stakedNscTracker.address, expandDecimals(500, 18));
+    await rewardRouter.connect(user0).stakeNsc(expandDecimals(500, 18));
 
     await expect(
       vester.connect(user0).deposit(expandDecimals(2385, 18))
     ).to.be.revertedWith("Vester: max vestable amount exceeded");
 
-    await ktx.mint(user2.address, expandDecimals(1, 18));
+    await nsc.mint(user2.address, expandDecimals(1, 18));
     await expect(
       vester.connect(user2).deposit(expandDecimals(1, 18))
     ).to.be.revertedWith("Vester: max vestable amount exceeded");
 
-    expect(await esKtx.balanceOf(user0.address)).eq(expandDecimals(2385, 18));
-    expect(await esKtx.balanceOf(vester.address)).eq(0);
-    expect(await feeKtxTracker.balanceOf(user0.address)).eq(
+    expect(await esNsc.balanceOf(user0.address)).eq(expandDecimals(2385, 18));
+    expect(await esNsc.balanceOf(vester.address)).eq(0);
+    expect(await feeNscTracker.balanceOf(user0.address)).eq(
       expandDecimals(1500, 18)
     );
-    expect(await feeKtxTracker.balanceOf(vester.address)).eq(0);
+    expect(await feeNscTracker.balanceOf(vester.address)).eq(0);
 
     await vester.connect(user0).deposit(expandDecimals(2380, 18));
 
-    expect(await esKtx.balanceOf(user0.address)).eq(expandDecimals(5, 18));
-    expect(await esKtx.balanceOf(vester.address)).eq(expandDecimals(2380, 18));
-    expect(await feeKtxTracker.balanceOf(user0.address)).gt(
+    expect(await esNsc.balanceOf(user0.address)).eq(expandDecimals(5, 18));
+    expect(await esNsc.balanceOf(vester.address)).eq(expandDecimals(2380, 18));
+    expect(await feeNscTracker.balanceOf(user0.address)).gt(
       expandDecimals(499, 18)
     );
-    expect(await feeKtxTracker.balanceOf(user0.address)).lt(
+    expect(await feeNscTracker.balanceOf(user0.address)).lt(
       expandDecimals(501, 18)
     );
-    expect(await feeKtxTracker.balanceOf(vester.address)).gt(
+    expect(await feeNscTracker.balanceOf(vester.address)).gt(
       expandDecimals(999, 18)
     );
-    expect(await feeKtxTracker.balanceOf(vester.address)).lt(
+    expect(await feeNscTracker.balanceOf(vester.address)).lt(
       expandDecimals(1001, 18)
     );
 
-    await rewardRouter.connect(user1).unstakeKtx(expandDecimals(499, 18));
+    await rewardRouter.connect(user1).unstakeNsc(expandDecimals(499, 18));
 
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
-    await stakedKtxTracker.connect(user1).claim(user3.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user1).claim(user3.address);
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(4164, 18)
@@ -874,83 +874,83 @@ describe("Vester", function () {
 
     await vester.connect(user0).withdraw();
 
-    expect(await feeKtxTracker.balanceOf(user0.address)).eq(
+    expect(await feeNscTracker.balanceOf(user0.address)).eq(
       expandDecimals(1500, 18)
     );
-    expect(await ktx.balanceOf(user0.address)).gt(expandDecimals(201, 18)); // 2380 / 12 = ~198
-    expect(await ktx.balanceOf(user0.address)).lt(expandDecimals(203, 18));
-    expect(await esKtx.balanceOf(user0.address)).gt(expandDecimals(2182, 18)); // 5 + 2380 - 202  = 2183
-    expect(await esKtx.balanceOf(user0.address)).lt(expandDecimals(2183, 18));
+    expect(await nsc.balanceOf(user0.address)).gt(expandDecimals(201, 18)); // 2380 / 12 = ~198
+    expect(await nsc.balanceOf(user0.address)).lt(expandDecimals(203, 18));
+    expect(await esNsc.balanceOf(user0.address)).gt(expandDecimals(2182, 18)); // 5 + 2380 - 202  = 2183
+    expect(await esNsc.balanceOf(user0.address)).lt(expandDecimals(2183, 18));
   });
 
   it("handles existing pair tokens", async () => {
-    stakedKtxTracker = await deployContract("RewardTracker", [
-      "Staked KTX",
-      "sKTX",
+    stakedNscTracker = await deployContract("RewardTracker", [
+      "Staked NSC",
+      "sNSC",
     ]);
-    stakedKtxDistributor = await deployContract("RewardDistributor", [
-      esKtx.address,
-      stakedKtxTracker.address,
+    stakedNscDistributor = await deployContract("RewardDistributor", [
+      esNsc.address,
+      stakedNscTracker.address,
     ]);
-    await stakedKtxTracker.initialize(
-      [ktx.address, esKtx.address],
-      stakedKtxDistributor.address
+    await stakedNscTracker.initialize(
+      [nsc.address, esNsc.address],
+      stakedNscDistributor.address
     );
-    await stakedKtxDistributor.updateLastDistributionTime();
+    await stakedNscDistributor.updateLastDistributionTime();
 
-    bonusKtxTracker = await deployContract("RewardTracker", [
-      "Staked + Bonus KTX",
-      "sbKTX",
+    bonusNscTracker = await deployContract("RewardTracker", [
+      "Staked + Bonus NSC",
+      "sbNSC",
     ]);
-    bonusKtxDistributor = await deployContract("BonusDistributor", [
-      bnKtx.address,
-      bonusKtxTracker.address,
+    bonusNscDistributor = await deployContract("BonusDistributor", [
+      bnNsc.address,
+      bonusNscTracker.address,
     ]);
-    await bonusKtxTracker.initialize(
-      [stakedKtxTracker.address],
-      bonusKtxDistributor.address
+    await bonusNscTracker.initialize(
+      [stakedNscTracker.address],
+      bonusNscDistributor.address
     );
-    await bonusKtxDistributor.updateLastDistributionTime();
+    await bonusNscDistributor.updateLastDistributionTime();
 
-    feeKtxTracker = await deployContract("RewardTracker", [
-      "Staked + Bonus + Fee KTX",
-      "sbfKTX",
+    feeNscTracker = await deployContract("RewardTracker", [
+      "Staked + Bonus + Fee NSC",
+      "sbfNSC",
     ]);
-    feeKtxDistributor = await deployContract("RewardDistributor", [
+    feeNscDistributor = await deployContract("RewardDistributor", [
       eth.address,
-      feeKtxTracker.address,
+      feeNscTracker.address,
     ]);
-    await feeKtxTracker.initialize(
-      [bonusKtxTracker.address, bnKtx.address],
-      feeKtxDistributor.address
+    await feeNscTracker.initialize(
+      [bonusNscTracker.address, bnNsc.address],
+      feeNscDistributor.address
     );
-    await feeKtxDistributor.updateLastDistributionTime();
+    await feeNscDistributor.updateLastDistributionTime();
 
-    await stakedKtxTracker.setInPrivateTransferMode(true);
-    await stakedKtxTracker.setInPrivateStakingMode(true);
-    await bonusKtxTracker.setInPrivateTransferMode(true);
-    await bonusKtxTracker.setInPrivateStakingMode(true);
-    await bonusKtxTracker.setInPrivateClaimingMode(true);
-    await feeKtxTracker.setInPrivateTransferMode(true);
-    await feeKtxTracker.setInPrivateStakingMode(true);
+    await stakedNscTracker.setInPrivateTransferMode(true);
+    await stakedNscTracker.setInPrivateStakingMode(true);
+    await bonusNscTracker.setInPrivateTransferMode(true);
+    await bonusNscTracker.setInPrivateStakingMode(true);
+    await bonusNscTracker.setInPrivateClaimingMode(true);
+    await feeNscTracker.setInPrivateTransferMode(true);
+    await feeNscTracker.setInPrivateStakingMode(true);
 
-    await esKtx.setMinter(wallet.address, true);
-    await esKtx.mint(
-      stakedKtxDistributor.address,
+    await esNsc.setMinter(wallet.address, true);
+    await esNsc.mint(
+      stakedNscDistributor.address,
       expandDecimals(50000 * 12, 18)
     );
-    await stakedKtxDistributor.setTokensPerInterval("20667989410000000"); // 0.02066798941 esKtx per second
+    await stakedNscDistributor.setTokensPerInterval("20667989410000000"); // 0.02066798941 esNsc per second
 
     const rewardRouter = await deployContract("RewardRouter", []);
     await rewardRouter.initialize(
       eth.address,
-      ktx.address,
-      esKtx.address,
-      bnKtx.address,
+      nsc.address,
+      esNsc.address,
+      bnNsc.address,
       AddressZero,
-      stakedKtxTracker.address,
-      bonusKtxTracker.address,
-      feeKtxTracker.address,
+      stakedNscTracker.address,
+      bonusNscTracker.address,
+      feeNscTracker.address,
       AddressZero,
       AddressZero,
       AddressZero,
@@ -958,99 +958,99 @@ describe("Vester", function () {
       AddressZero
     );
 
-    // allow rewardRouter to stake in stakedKtxTracker
-    await stakedKtxTracker.setHandler(rewardRouter.address, true);
-    // allow bonusKtxTracker to stake stakedKtxTracker
-    await stakedKtxTracker.setHandler(bonusKtxTracker.address, true);
-    // allow rewardRouter to stake in bonusKtxTracker
-    await bonusKtxTracker.setHandler(rewardRouter.address, true);
-    // allow bonusKtxTracker to stake feeKtxTracker
-    await bonusKtxTracker.setHandler(feeKtxTracker.address, true);
-    await bonusKtxDistributor.setBonusMultiplier(10000);
-    // allow rewardRouter to stake in feeKtxTracker
-    await feeKtxTracker.setHandler(rewardRouter.address, true);
-    // allow stakedKtxTracker to stake esKtx
-    await esKtx.setHandler(stakedKtxTracker.address, true);
-    // allow feeKtxTracker to stake bnKtx
-    await bnKtx.setHandler(feeKtxTracker.address, true);
-    // allow rewardRouter to burn bnKtx
-    await bnKtx.setMinter(rewardRouter.address, true);
+    // allow rewardRouter to stake in stakedNscTracker
+    await stakedNscTracker.setHandler(rewardRouter.address, true);
+    // allow bonusNscTracker to stake stakedNscTracker
+    await stakedNscTracker.setHandler(bonusNscTracker.address, true);
+    // allow rewardRouter to stake in bonusNscTracker
+    await bonusNscTracker.setHandler(rewardRouter.address, true);
+    // allow bonusNscTracker to stake feeNscTracker
+    await bonusNscTracker.setHandler(feeNscTracker.address, true);
+    await bonusNscDistributor.setBonusMultiplier(10000);
+    // allow rewardRouter to stake in feeNscTracker
+    await feeNscTracker.setHandler(rewardRouter.address, true);
+    // allow stakedNscTracker to stake esNsc
+    await esNsc.setHandler(stakedNscTracker.address, true);
+    // allow feeNscTracker to stake bnNsc
+    await bnNsc.setHandler(feeNscTracker.address, true);
+    // allow rewardRouter to burn bnNsc
+    await bnNsc.setMinter(rewardRouter.address, true);
 
     const vester = await deployContract("Vester", [
-      "Vested KTX",
-      "veKTX",
+      "Vested NSC",
+      "veNSC",
       secondsPerYear,
-      esKtx.address,
-      feeKtxTracker.address,
-      ktx.address,
-      stakedKtxTracker.address,
+      esNsc.address,
+      feeNscTracker.address,
+      nsc.address,
+      stakedNscTracker.address,
     ]);
-    await esKtx.setMinter(vester.address, true);
+    await esNsc.setMinter(vester.address, true);
     await vester.setHandler(wallet.address, true);
 
-    expect(await vester.name()).eq("Vested KTX");
-    expect(await vester.symbol()).eq("veKTX");
+    expect(await vester.name()).eq("Vested NSC");
+    expect(await vester.symbol()).eq("veNSC");
     expect(await vester.vestingDuration()).eq(secondsPerYear);
-    expect(await vester.esToken()).eq(esKtx.address);
-    expect(await vester.pairToken()).eq(feeKtxTracker.address);
-    expect(await vester.claimableToken()).eq(ktx.address);
-    expect(await vester.rewardTracker()).eq(stakedKtxTracker.address);
+    expect(await vester.esToken()).eq(esNsc.address);
+    expect(await vester.pairToken()).eq(feeNscTracker.address);
+    expect(await vester.claimableToken()).eq(nsc.address);
+    expect(await vester.rewardTracker()).eq(stakedNscTracker.address);
     expect(await vester.hasPairToken()).eq(true);
     expect(await vester.hasRewardTracker()).eq(true);
     expect(await vester.hasMaxVestableAmount()).eq(true);
 
-    // allow vester to transfer feeKtxTracker tokens
-    await feeKtxTracker.setHandler(vester.address, true);
-    // allow vester to transfer esKtx tokens
-    await esKtx.setHandler(vester.address, true);
+    // allow vester to transfer feeNscTracker tokens
+    await feeNscTracker.setHandler(vester.address, true);
+    // allow vester to transfer esNsc tokens
+    await esNsc.setHandler(vester.address, true);
 
-    await ktx.mint(vester.address, expandDecimals(2000, 18));
+    await nsc.mint(vester.address, expandDecimals(2000, 18));
 
-    await ktx.mint(user0.address, expandDecimals(1000, 18));
-    await ktx.mint(user1.address, expandDecimals(500, 18));
-    await ktx
+    await nsc.mint(user0.address, expandDecimals(1000, 18));
+    await nsc.mint(user1.address, expandDecimals(500, 18));
+    await nsc
       .connect(user0)
-      .approve(stakedKtxTracker.address, expandDecimals(1000, 18));
-    await ktx
+      .approve(stakedNscTracker.address, expandDecimals(1000, 18));
+    await nsc
       .connect(user1)
-      .approve(stakedKtxTracker.address, expandDecimals(500, 18));
+      .approve(stakedNscTracker.address, expandDecimals(500, 18));
 
-    await rewardRouter.connect(user0).stakeKtx(expandDecimals(1000, 18));
-    await rewardRouter.connect(user1).stakeKtx(expandDecimals(500, 18));
+    await rewardRouter.connect(user0).stakeNsc(expandDecimals(1000, 18));
+    await rewardRouter.connect(user1).stakeNsc(expandDecimals(500, 18));
 
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await stakedKtxTracker.claimable(user0.address)).gt(
+    expect(await stakedNscTracker.claimable(user0.address)).gt(
       expandDecimals(1190, 18)
     );
-    expect(await stakedKtxTracker.claimable(user0.address)).lt(
+    expect(await stakedNscTracker.claimable(user0.address)).lt(
       expandDecimals(1191, 18)
     );
-    expect(await stakedKtxTracker.claimable(user1.address)).gt(
+    expect(await stakedNscTracker.claimable(user1.address)).gt(
       expandDecimals(594, 18)
     );
-    expect(await stakedKtxTracker.claimable(user1.address)).lt(
+    expect(await stakedNscTracker.claimable(user1.address)).lt(
       expandDecimals(596, 18)
     );
 
     expect(await vester.getMaxVestableAmount(user0.address)).eq(0);
     expect(await vester.getMaxVestableAmount(user1.address)).eq(0);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await esKtx.balanceOf(user1.address)).eq(0);
-    expect(await esKtx.balanceOf(user2.address)).eq(0);
-    expect(await esKtx.balanceOf(user3.address)).eq(0);
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user1.address)).eq(0);
+    expect(await esNsc.balanceOf(user2.address)).eq(0);
+    expect(await esNsc.balanceOf(user3.address)).eq(0);
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
-    await stakedKtxTracker.connect(user1).claim(user3.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user1).claim(user3.address);
 
-    expect(await esKtx.balanceOf(user0.address)).eq(0);
-    expect(await esKtx.balanceOf(user1.address)).eq(0);
-    expect(await esKtx.balanceOf(user2.address)).gt(expandDecimals(1190, 18));
-    expect(await esKtx.balanceOf(user2.address)).lt(expandDecimals(1191, 18));
-    expect(await esKtx.balanceOf(user3.address)).gt(expandDecimals(594, 18));
-    expect(await esKtx.balanceOf(user3.address)).lt(expandDecimals(596, 18));
+    expect(await esNsc.balanceOf(user0.address)).eq(0);
+    expect(await esNsc.balanceOf(user1.address)).eq(0);
+    expect(await esNsc.balanceOf(user2.address)).gt(expandDecimals(1190, 18));
+    expect(await esNsc.balanceOf(user2.address)).lt(expandDecimals(1191, 18));
+    expect(await esNsc.balanceOf(user3.address)).gt(expandDecimals(594, 18));
+    expect(await esNsc.balanceOf(user3.address)).lt(expandDecimals(596, 18));
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(1190, 18)
@@ -1089,13 +1089,13 @@ describe("Vester", function () {
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
-    await stakedKtxTracker.connect(user1).claim(user3.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user1).claim(user3.address);
 
-    expect(await esKtx.balanceOf(user2.address)).gt(expandDecimals(2380, 18));
-    expect(await esKtx.balanceOf(user2.address)).lt(expandDecimals(2382, 18));
-    expect(await esKtx.balanceOf(user3.address)).gt(expandDecimals(1189, 18));
-    expect(await esKtx.balanceOf(user3.address)).lt(expandDecimals(1191, 18));
+    expect(await esNsc.balanceOf(user2.address)).gt(expandDecimals(2380, 18));
+    expect(await esNsc.balanceOf(user2.address)).lt(expandDecimals(2382, 18));
+    expect(await esNsc.balanceOf(user3.address)).gt(expandDecimals(1189, 18));
+    expect(await esNsc.balanceOf(user3.address)).lt(expandDecimals(1191, 18));
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(2380, 18)
@@ -1136,24 +1136,24 @@ describe("Vester", function () {
       await vester.getPairAmount(user1.address, expandDecimals(1189, 18))
     ).lt(expandDecimals(500, 18));
 
-    expect(await feeKtxTracker.balanceOf(user0.address)).eq(
+    expect(await feeNscTracker.balanceOf(user0.address)).eq(
       expandDecimals(1000, 18)
     );
-    await esKtx.mint(user0.address, expandDecimals(2380, 18));
+    await esNsc.mint(user0.address, expandDecimals(2380, 18));
     await vester.connect(user0).deposit(expandDecimals(2380, 18));
 
-    expect(await feeKtxTracker.balanceOf(user0.address)).gt(0);
-    expect(await feeKtxTracker.balanceOf(user0.address)).lt(
+    expect(await feeNscTracker.balanceOf(user0.address)).gt(0);
+    expect(await feeNscTracker.balanceOf(user0.address)).lt(
       expandDecimals(1, 18)
     );
 
     await increaseTime(provider, 24 * 60 * 60);
     await mineBlock(provider);
 
-    expect(await stakedKtxTracker.claimable(user0.address)).gt(
+    expect(await stakedNscTracker.claimable(user0.address)).gt(
       expandDecimals(1190, 18)
     );
-    expect(await stakedKtxTracker.claimable(user0.address)).lt(
+    expect(await stakedNscTracker.claimable(user0.address)).lt(
       expandDecimals(1191, 18)
     );
 
@@ -1164,7 +1164,7 @@ describe("Vester", function () {
       expandDecimals(2382, 18)
     );
 
-    await stakedKtxTracker.connect(user0).claim(user2.address);
+    await stakedNscTracker.connect(user0).claim(user2.address);
 
     expect(await vester.getMaxVestableAmount(user0.address)).gt(
       expandDecimals(3571, 18)
@@ -1180,21 +1180,21 @@ describe("Vester", function () {
       await vester.getPairAmount(user0.address, expandDecimals(3570, 18))
     ).lt(expandDecimals(1000, 18));
 
-    const feeKtxTrackerBalance = await feeKtxTracker.balanceOf(user0.address);
+    const feeNscTrackerBalance = await feeNscTracker.balanceOf(user0.address);
 
-    await esKtx.mint(user0.address, expandDecimals(1190, 18));
+    await esNsc.mint(user0.address, expandDecimals(1190, 18));
     await vester.connect(user0).deposit(expandDecimals(1190, 18));
 
-    expect(feeKtxTrackerBalance).eq(
-      await feeKtxTracker.balanceOf(user0.address)
+    expect(feeNscTrackerBalance).eq(
+      await feeNscTracker.balanceOf(user0.address)
     );
 
     await expect(
-      rewardRouter.connect(user0).unstakeKtx(expandDecimals(2, 18))
+      rewardRouter.connect(user0).unstakeNsc(expandDecimals(2, 18))
     ).to.be.revertedWith("RewardTracker: burn amount exceeds balance");
 
     await vester.connect(user0).withdraw();
 
-    await rewardRouter.connect(user0).unstakeKtx(expandDecimals(2, 18));
+    await rewardRouter.connect(user0).unstakeNsc(expandDecimals(2, 18));
   });
 });

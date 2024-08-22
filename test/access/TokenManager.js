@@ -20,17 +20,17 @@ describe("TokenManager", function () {
   const provider = waffle.provider;
   const [wallet, user0, user1, user2, user3, signer0, signer1, signer2] =
     provider.getWallets();
-  let ktx;
+  let nsc;
   let eth;
   let tokenManager;
   let timelock;
-  let ktxTimelock;
+  let nscTimelock;
   let nft0;
   let nft1;
   const nftId = 17;
 
   beforeEach(async () => {
-    ktx = await deployContract("KTX", []);
+    nsc = await deployContract("NSC", []);
     eth = await deployContract("Token", []);
     tokenManager = await deployContract("TokenManager", [2]);
 
@@ -56,7 +56,7 @@ describe("TokenManager", function () {
       100,
     ]);
 
-    ktxTimelock = await deployContract("KtxTimelock", [
+    nscTimelock = await deployContract("NscTimelock", [
       wallet.address,
       5 * 24 * 60 * 60,
       7 * 24 * 60 * 60,
@@ -159,7 +159,7 @@ describe("TokenManager", function () {
     await expect(
       tokenManager
         .connect(wallet)
-        .approve(ktx.address, user2.address, expandDecimals(5, 18), 1)
+        .approve(nsc.address, user2.address, expandDecimals(5, 18), 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await expect(
@@ -686,143 +686,143 @@ describe("TokenManager", function () {
     await expect(
       tokenManager
         .connect(user0)
-        .signalSetGov(timelock.address, ktx.address, user1.address)
+        .signalSetGov(timelock.address, nsc.address, user1.address)
     ).to.be.revertedWith("TokenManager: forbidden");
 
     await tokenManager
       .connect(wallet)
-      .signalSetGov(timelock.address, ktx.address, user1.address);
+      .signalSetGov(timelock.address, nsc.address, user1.address);
   });
 
   it("signSetGov", async () => {
     await expect(
       tokenManager
         .connect(user0)
-        .signSetGov(timelock.address, ktx.address, user1.address, 1)
+        .signSetGov(timelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: forbidden");
 
     await expect(
       tokenManager
         .connect(signer2)
-        .signSetGov(timelock.address, ktx.address, user1.address, 1)
+        .signSetGov(timelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await tokenManager
       .connect(wallet)
-      .signalSetGov(timelock.address, ktx.address, user1.address);
+      .signalSetGov(timelock.address, nsc.address, user1.address);
 
     await expect(
       tokenManager
         .connect(user0)
-        .signSetGov(timelock.address, ktx.address, user1.address, 1)
+        .signSetGov(timelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: forbidden");
 
     await tokenManager
       .connect(signer2)
-      .signSetGov(timelock.address, ktx.address, user1.address, 1);
+      .signSetGov(timelock.address, nsc.address, user1.address, 1);
 
     await expect(
       tokenManager
         .connect(signer2)
-        .signSetGov(timelock.address, ktx.address, user1.address, 1)
+        .signSetGov(timelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: already signed");
 
     await tokenManager
       .connect(signer1)
-      .signSetGov(timelock.address, ktx.address, user1.address, 1);
+      .signSetGov(timelock.address, nsc.address, user1.address, 1);
   });
 
   it("setGov", async () => {
-    await ktx.setGov(ktxTimelock.address);
+    await nsc.setGov(nscTimelock.address);
 
     await expect(
       tokenManager
         .connect(user0)
-        .setGov(ktxTimelock.address, ktx.address, user1.address, 1)
+        .setGov(nscTimelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: forbidden");
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, ktx.address, user1.address, 1)
+        .setGov(nscTimelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await tokenManager
       .connect(wallet)
-      .signalSetGov(ktxTimelock.address, ktx.address, user1.address);
+      .signalSetGov(nscTimelock.address, nsc.address, user1.address);
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(user2.address, ktx.address, user1.address, 1)
+        .setGov(user2.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, user0.address, user1.address, 1)
+        .setGov(nscTimelock.address, user0.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, ktx.address, user2.address, 1)
+        .setGov(nscTimelock.address, nsc.address, user2.address, 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, ktx.address, user1.address, 1 + 1)
+        .setGov(nscTimelock.address, nsc.address, user1.address, 1 + 1)
     ).to.be.revertedWith("TokenManager: action not signalled");
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, ktx.address, user1.address, 1)
+        .setGov(nscTimelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: action not authorized");
 
     await tokenManager
       .connect(signer0)
-      .signSetGov(ktxTimelock.address, ktx.address, user1.address, 1);
+      .signSetGov(nscTimelock.address, nsc.address, user1.address, 1);
 
     await expect(
       tokenManager
         .connect(wallet)
-        .setGov(ktxTimelock.address, ktx.address, user1.address, 1)
+        .setGov(nscTimelock.address, nsc.address, user1.address, 1)
     ).to.be.revertedWith("TokenManager: insufficient authorization");
 
     await expect(
-      ktxTimelock.connect(wallet).signalSetGov(ktx.address, user1.address)
-    ).to.be.revertedWith("KtxTimelock: forbidden");
+      nscTimelock.connect(wallet).signalSetGov(nsc.address, user1.address)
+    ).to.be.revertedWith("NscTimelock: forbidden");
 
     await tokenManager
       .connect(signer2)
-      .signSetGov(ktxTimelock.address, ktx.address, user1.address, 1);
+      .signSetGov(nscTimelock.address, nsc.address, user1.address, 1);
 
     await expect(
-      ktxTimelock.connect(wallet).setGov(ktx.address, user1.address)
-    ).to.be.revertedWith("KtxTimelock: action not signalled");
+      nscTimelock.connect(wallet).setGov(nsc.address, user1.address)
+    ).to.be.revertedWith("NscTimelock: action not signalled");
 
     await tokenManager
       .connect(wallet)
-      .setGov(ktxTimelock.address, ktx.address, user1.address, 1);
+      .setGov(nscTimelock.address, nsc.address, user1.address, 1);
 
     await expect(
-      ktxTimelock.connect(wallet).setGov(ktx.address, user1.address)
-    ).to.be.revertedWith("KtxTimelock: action time not yet passed");
+      nscTimelock.connect(wallet).setGov(nsc.address, user1.address)
+    ).to.be.revertedWith("NscTimelock: action time not yet passed");
 
     await increaseTime(provider, 6 * 24 * 60 * 60 + 10);
     await mineBlock(provider);
 
     await expect(
-      ktxTimelock.connect(wallet).setGov(ktx.address, user1.address)
-    ).to.be.revertedWith("KtxTimelock: action time not yet passed");
+      nscTimelock.connect(wallet).setGov(nsc.address, user1.address)
+    ).to.be.revertedWith("NscTimelock: action time not yet passed");
 
     await increaseTime(provider, 1 * 24 * 60 * 60 + 10);
     await mineBlock(provider);
 
-    expect(await ktx.gov()).eq(ktxTimelock.address);
-    await ktxTimelock.connect(wallet).setGov(ktx.address, user1.address);
-    expect(await ktx.gov()).eq(user1.address);
+    expect(await nsc.gov()).eq(nscTimelock.address);
+    await nscTimelock.connect(wallet).setGov(nsc.address, user1.address);
+    expect(await nsc.gov()).eq(user1.address);
   });
 });

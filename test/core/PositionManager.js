@@ -42,8 +42,8 @@ describe("PositionManager", function () {
   let orderBook;
   let deployTimelock;
 
-  let klpManager;
-  let klp;
+  let nlpManager;
+  let nlp;
 
   beforeEach(async () => {
     bnb = await deployContract("Token", []);
@@ -118,16 +118,16 @@ describe("PositionManager", function () {
     await router.addPlugin(orderBook.address);
     await router.connect(user0).approvePlugin(orderBook.address);
 
-    klp = await deployContract("KLP", []);
+    nlp = await deployContract("NLP", []);
     let shortsTracker = await await deployContract(
       "ShortsTracker",
       [vault.address],
       "ShortsTracker"
     );
-    klpManager = await deployContract("KlpManager", [
+    nlpManager = await deployContract("NlpManager", [
       vault.address,
       usdg.address,
-      klp.address,
+      nlp.address,
       shortsTracker.address,
       24 * 60 * 60,
     ]);

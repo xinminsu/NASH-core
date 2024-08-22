@@ -23,9 +23,9 @@ describe("Vault.increaseShortPosition", function () {
   const provider = waffle.provider;
   const [wallet, user0, user1, user2, user3] = provider.getWallets();
   let vault;
-  let klpManager;
+  let nlpManager;
   let vaultPriceFeed;
-  let klp;
+  let nlp;
   let usdg;
   let router;
   let bnb;
@@ -48,7 +48,7 @@ describe("Vault.increaseShortPosition", function () {
     daiPriceFeed = await deployContract("PriceFeed", []);
 
     vault = await deployContract("Vault", []);
-    klp = await deployContract("KLP", []);
+    nlp = await deployContract("NLP", []);
     usdg = await deployContract("USDG", [vault.address]);
     router = await deployContract("Router", [
       vault.address,
@@ -68,10 +68,10 @@ describe("Vault.increaseShortPosition", function () {
       [vault.address],
       "ShortsTracker"
     );
-    klpManager = await deployContract("KlpManager", [
+    nlpManager = await deployContract("NlpManager", [
       vault.address,
       usdg.address,
-      klp.address,
+      nlp.address,
       shortsTracker.address,
       24 * 60 * 60,
     ]);
@@ -305,8 +305,8 @@ describe("Vault.increaseShortPosition", function () {
     let globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(0);
-    expect(await klpManager.getAumInUsdg(true)).eq(0);
-    expect(await klpManager.getAumInUsdg(false)).eq(0);
+    expect(await nlpManager.getAumInUsdg(true)).eq(0);
+    expect(await nlpManager.getAumInUsdg(false)).eq(0);
 
     await vault.setFees(
       50, // _taxBasisPoints
@@ -377,8 +377,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(0);
-    expect(await klpManager.getAumInUsdg(true)).eq("499800000000000000000");
-    expect(await klpManager.getAumInUsdg(false)).eq("499800000000000000000");
+    expect(await nlpManager.getAumInUsdg(true)).eq("499800000000000000000");
+    expect(await nlpManager.getAumInUsdg(false)).eq("499800000000000000000");
 
     await dai.connect(user0).transfer(vault.address, expandDecimals(20, 18));
     await expect(
@@ -459,8 +459,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(toUsd(2.25));
-    expect(await klpManager.getAumInUsdg(true)).eq("502050000000000000000");
-    expect(await klpManager.getAumInUsdg(false)).eq("499800000000000000000");
+    expect(await nlpManager.getAumInUsdg(true)).eq("502050000000000000000");
+    expect(await nlpManager.getAumInUsdg(false)).eq("499800000000000000000");
 
     let delta = await vault.getPositionDelta(
       user0.address,
@@ -487,8 +487,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(toUsd(4.5));
-    expect(await klpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 499.8 + 4.5
-    expect(await klpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 499.8 + 4.5
+    expect(await nlpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 499.8 + 4.5
+    expect(await nlpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 499.8 + 4.5
 
     await vault
       .connect(user0)
@@ -538,8 +538,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(toUsd(2));
-    expect(await klpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 499.8 + 4.5
-    expect(await klpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 499.8 + 4.5
+    expect(await nlpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 499.8 + 4.5
+    expect(await nlpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 499.8 + 4.5
 
     await dai.mint(vault.address, expandDecimals(50, 18));
     await vault
@@ -560,8 +560,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(false);
     expect(await globalDelta[1]).eq(toUsd(2));
-    expect(await klpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 502.3 + 2
-    expect(await klpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 502.3 + 2
+    expect(await nlpManager.getAumInUsdg(true)).eq("504300000000000000000"); // 502.3 + 2
+    expect(await nlpManager.getAumInUsdg(false)).eq("504300000000000000000"); // 502.3 + 2
 
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(40000));
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(40000));
@@ -588,8 +588,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(true);
     expect(await globalDelta[1]).eq("3761904761904761904761904761904");
-    expect(await klpManager.getAumInUsdg(true)).eq("498538095238095238095"); // 502.3 + 1 - 4.76 => 498.53
-    expect(await klpManager.getAumInUsdg(false)).eq("492776190476190476190"); // 492.77619047619047619
+    expect(await nlpManager.getAumInUsdg(true)).eq("498538095238095238095"); // 502.3 + 1 - 4.76 => 498.53
+    expect(await nlpManager.getAumInUsdg(false)).eq("492776190476190476190"); // 492.77619047619047619
 
     await dai.mint(vault.address, expandDecimals(20, 18));
     await vault
@@ -610,8 +610,8 @@ describe("Vault.increaseShortPosition", function () {
     globalDelta = await vault.getGlobalShortDelta(btc.address);
     expect(await globalDelta[0]).eq(true);
     expect(await globalDelta[1]).eq("2261904761904761904761904761904");
-    expect(await klpManager.getAumInUsdg(true)).eq("500038095238095238095"); // 500.038095238095238095
-    expect(await klpManager.getAumInUsdg(false)).eq("492776190476190476190"); // 492.77619047619047619
+    expect(await nlpManager.getAumInUsdg(true)).eq("500038095238095238095"); // 500.038095238095238095
+    expect(await nlpManager.getAumInUsdg(false)).eq("492776190476190476190"); // 492.77619047619047619
 
     await dai.mint(vault.address, expandDecimals(20, 18));
 

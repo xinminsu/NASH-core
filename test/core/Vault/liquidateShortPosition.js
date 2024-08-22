@@ -24,9 +24,9 @@ describe("Vault.liquidateShortPosition", function () {
   const provider = waffle.provider;
   const [wallet, user0, user1, user2, user3] = provider.getWallets();
   let vault;
-  let klpManager;
+  let nlpManager;
   let vaultPriceFeed;
-  let klp;
+  let nlp;
   let usdg;
   let router;
   let bnb;
@@ -49,7 +49,7 @@ describe("Vault.liquidateShortPosition", function () {
     daiPriceFeed = await deployContract("PriceFeed", []);
 
     vault = await deployContract("Vault", []);
-    klp = await deployContract("KLP", []);
+    nlp = await deployContract("NLP", []);
     usdg = await deployContract("USDG", [vault.address]);
     router = await deployContract("Router", [
       vault.address,
@@ -64,10 +64,10 @@ describe("Vault.liquidateShortPosition", function () {
       [vault.address],
       "ShortsTracker"
     );
-    klpManager = await deployContract("KlpManager", [
+    nlpManager = await deployContract("NlpManager", [
       vault.address,
       usdg.address,
-      klp.address,
+      nlp.address,
       shortsTracker.address,
       24 * 60 * 60,
     ]);
@@ -144,7 +144,7 @@ describe("Vault.liquidateShortPosition", function () {
 
     expect(await vault.globalShortSizes(btc.address)).eq(0);
     expect(await vault.globalShortAveragePrices(btc.address)).eq(0);
-    expect(await klpManager.getAumInUsdg(true)).eq(0);
+    expect(await nlpManager.getAumInUsdg(true)).eq(0);
 
     await dai.mint(user0.address, expandDecimals(1000, 18));
     await dai.connect(user0).transfer(vault.address, expandDecimals(100, 18));
@@ -177,7 +177,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(false)).eq("99960000000000000000"); // 99.96
+    expect(await nlpManager.getAumInUsdg(false)).eq("99960000000000000000"); // 99.96
 
     expect(
       (
@@ -316,7 +316,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("104780000000000000000"); // 104.78
+    expect(await nlpManager.getAumInUsdg(true)).eq("104780000000000000000"); // 104.78
 
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
@@ -337,7 +337,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(50000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("104780000000000000000"); // 104.78
+    expect(await nlpManager.getAumInUsdg(true)).eq("104780000000000000000"); // 104.78
 
     position = await vault.getPosition(
       user0.address,
@@ -392,7 +392,7 @@ describe("Vault.liquidateShortPosition", function () {
 
     expect(await vault.globalShortSizes(btc.address)).eq(0);
     expect(await vault.globalShortAveragePrices(btc.address)).eq(0);
-    expect(await klpManager.getAumInUsdg(true)).eq(0);
+    expect(await nlpManager.getAumInUsdg(true)).eq(0);
 
     await dai.mint(user0.address, expandDecimals(1001, 18));
     await dai.connect(user0).transfer(vault.address, expandDecimals(1001, 18));
@@ -426,7 +426,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(false)).eq("1000599600000000000000"); // 1000.5996
+    expect(await nlpManager.getAumInUsdg(false)).eq("1000599600000000000000"); // 1000.5996
 
     expect(
       (
@@ -569,7 +569,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
 
     const tx = await vault.liquidatePosition(
       user0.address,
@@ -605,7 +605,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
 
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
@@ -627,7 +627,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(50000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1090599600000000000000"); // 1090.5996
 
     position = await vault.getPosition(
       user0.address,
@@ -682,7 +682,7 @@ describe("Vault.liquidateShortPosition", function () {
 
     expect(await vault.globalShortSizes(btc.address)).eq(0);
     expect(await vault.globalShortAveragePrices(btc.address)).eq(0);
-    expect(await klpManager.getAumInUsdg(true)).eq(0);
+    expect(await nlpManager.getAumInUsdg(true)).eq(0);
 
     await dai.mint(user0.address, expandDecimals(1001, 18));
     await dai.connect(user0).transfer(vault.address, expandDecimals(1001, 18));
@@ -716,7 +716,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(false)).eq("1000599600000000000000"); // 1000.5996
+    expect(await nlpManager.getAumInUsdg(false)).eq("1000599600000000000000"); // 1000.5996
 
     expect(
       (
@@ -836,7 +836,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1125599600000000000000"); // 1125.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1125599600000000000000"); // 1125.5996
 
     const tx = await vault.liquidatePosition(
       user0.address,
@@ -872,7 +872,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(40000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1093599600000000000000"); // 1093.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1093599600000000000000"); // 1093.5996
 
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
     await btcPriceFeed.setLatestAnswer(toChainlinkPrice(50000));
@@ -894,7 +894,7 @@ describe("Vault.liquidateShortPosition", function () {
     expect(await vault.globalShortAveragePrices(btc.address)).eq(
       toNormalizedPrice(50000)
     );
-    expect(await klpManager.getAumInUsdg(true)).eq("1093599600000000000000"); // 1093.5996
+    expect(await nlpManager.getAumInUsdg(true)).eq("1093599600000000000000"); // 1093.5996
 
     position = await vault.getPosition(
       user0.address,
