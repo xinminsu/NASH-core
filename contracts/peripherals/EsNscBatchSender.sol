@@ -8,19 +8,19 @@ import "../libraries/math/SafeMath.sol";
 import "../staking/interfaces/IVester.sol";
 import "../staking/interfaces/IRewardTracker.sol";
 
-contract EsKtxBatchSender {
+contract EsNscBatchSender {
     using SafeMath for uint256;
 
     address public admin;
-    address public esKtx;
+    address public esNsc;
 
-    constructor(address _esKtx) public {
+    constructor(address _esNsc) public {
         admin = msg.sender;
-        esKtx = _esKtx;
+        esNsc = _esNsc;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "EsKtxBatchSender: forbidden");
+        require(msg.sender == admin, "EsNscBatchSender: forbidden");
         _;
     }
 
@@ -33,7 +33,7 @@ contract EsKtxBatchSender {
         IRewardTracker rewardTracker = IRewardTracker(_vester.rewardTracker());
 
         for (uint256 i = 0; i < _accounts.length; i++) {
-            IERC20(esKtx).transferFrom(msg.sender, _accounts[i], _amounts[i]);
+            IERC20(EsNsc).transferFrom(msg.sender, _accounts[i], _amounts[i]);
 
             uint256 nextTransferredCumulativeReward = _vester.transferredCumulativeRewards(_accounts[i]).add(_amounts[i]);
             _vester.setTransferredCumulativeRewards(_accounts[i], nextTransferredCumulativeReward);
