@@ -43,7 +43,7 @@ async function getAllOrders() {
       }
       }`;
     let fetchResponse = await fetch(
-      "https://testsubgraph.ktx.finance/subgraphs/name/ktx",
+      "https://testsubgraph.nsc.finance/subgraphs/name/nsc",
       {
         method: "POST",
         headers: {

@@ -409,33 +409,33 @@ async function deployVault(tokens) {
   for (let i = 0; i < tokenArr.length; i++) {
     await vaultPriceFeed.setSpreadBasisPoints(tokenArr[i].address, 0);
   }
-  const klp = await deployContract("KLP", []);
+  const nlp = await deployContract("NLP", []);
   await sendTxn(
-    klp.setInPrivateTransferMode(true),
-    "klp.setInPrivateTransferMode"
+    nlp.setInPrivateTransferMode(true),
+    "nlp.setInPrivateTransferMode"
   );
-  // const klp = await contractAt("KLP", "0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258")
+  // const nlp = await contractAt("NLP", "0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258")
   const shortsTracker = await deployShortsTracker(vault);
 
-  const klpManager = await deployContract("KlpManager", [
+  const nlpManager = await deployContract("NlpManager", [
     vault.address,
     usdg.address,
-    klp.address,
+    nlp.address,
     shortsTracker.address,
     15 * 60,
   ]);
   await sendTxn(
-    klpManager.setInPrivateMode(true),
-    "klpManager.setInPrivateMode"
+    nlpManager.setInPrivateMode(true),
+    "nlpManager.setInPrivateMode"
   );
 
   await sendTxn(
-    klpManager.setShortsTrackerAveragePriceWeight(10000),
-    "klpManager.setShortsTrackerAveragePriceWeight(10000)"
+    nlpManager.setShortsTrackerAveragePriceWeight(10000),
+    "nlpManager.setShortsTrackerAveragePriceWeight(10000)"
   );
 
-  await sendTxn(klp.setMinter(klpManager.address, true), "klp.setMinter");
-  await sendTxn(usdg.addVault(klpManager.address), "usdg.addVault(klpManager)");
+  await sendTxn(nlp.setMinter(nlpManager.address, true), "nlp.setMinter");
+  await sendTxn(usdg.addVault(nlpManager.address), "usdg.addVault(nlpManager)");
 
   await sendTxn(
     vault.initialize(
@@ -452,7 +452,7 @@ async function deployVault(tokens) {
   await sendTxn(vault.setFundingRate(36, 1000, 1000), "vault.setFundingRate");
 
   await sendTxn(vault.setInManagerMode(true), "vault.setInManagerMode");
-  await sendTxn(vault.setManager(klpManager.address, true), "vault.setManager");
+  await sendTxn(vault.setManager(nlpManager.address, true), "vault.setManager");
 
   await sendTxn(
     vault.setFees(
@@ -487,8 +487,8 @@ async function deployVault(tokens) {
     usdg,
     router,
     vaultPriceFeed,
-    klp,
-    klpManager,
+    nlp,
+    nlpManager,
     vaultUtils,
     shortsTracker,
   ];
@@ -504,21 +504,21 @@ async function deployShortsTracker(vault) {
   return shortsTracker;
 }
 
-async function deployKtx() {
-  const ktx = await deployContract("KTX", []);
+async function deployNsc() {
+  const nsc = await deployContract("NSC", []);
   for (let i = 0; i < minter.length; i++) {
     await sendTxn(
-      ktx.setMinter(minter[i], true),
-      `ktx.setMinter: ${minter[i]}`
+      nsc.setMinter(minter[i], true),
+      `nsc.setMinter: ${minter[i]}`
     );
   }
-  const esKtx = await deployContract("EsKTX", []);
-  const bnKtx = await deployContract("MintableBaseToken", [
-    "Bonus KTX",
-    "bnKTX",
+  const esNsc = await deployContract("EsNSC", []);
+  const bnNsc = await deployContract("MintableBaseToken", [
+    "Bonus NSC",
+    "bnNSC",
     0,
   ]);
-  return [ktx, esKtx, bnKtx];
+  return [nsc, esNsc, bnNsc];
 }
 
 async function deployBalanceUpdater() {
@@ -531,15 +531,15 @@ async function deployBatchSender() {
   return batchSender;
 }
 
-async function deployEsKtxBatchSender(esKtx) {
-  const esKtxBatchSender = await deployContract("EsKtxBatchSender", [
-    esKtx.address,
+async function deployEsNscBatchSender(esNsc) {
+  const esNscBatchSender = await deployContract("EsNscBatchSender", [
+    esNsc.address,
   ]);
 
-  return esKtxBatchSender;
+  return esNscBatchSender;
 }
 
-async function deployKtxTimelock(tokenManager, rewardManager) {
+async function deployNscTimelock(tokenManager, rewardManager) {
   const buffer = 24 * 60 * 60;
   // const buffer = 5;
   const longBuffer = 7 * 24 * 60 * 60;
@@ -547,8 +547,8 @@ async function deployKtxTimelock(tokenManager, rewardManager) {
   const mintReceiver = tokenManager;
   // const mintReceiver = { address: AddressZero };
   const signer = await getFrameSigner();
-  const ktxTimelock = await deployContract(
-    "KtxTimelock",
+  const nscTimelock = await deployContract(
+    "NscTimelock",
     [
       signer.address,
       buffer,
@@ -558,10 +558,10 @@ async function deployKtxTimelock(tokenManager, rewardManager) {
       mintReceiver.address,
       maxTokenSupply,
     ],
-    "KtxTimelock"
+    "NscTimelock"
     // { gasLimit: 100000000 }
   );
-  return ktxTimelock;
+  return nscTimelock;
 }
 
 async function deployOrderBookReader() {
@@ -589,7 +589,7 @@ async function deployRewardReader() {
 
 async function deployTimeLock(
   tokenManager,
-  klpManager,
+  nlpManager,
   rewardRouter,
   positionRouter,
   positionManager,
@@ -609,7 +609,7 @@ async function deployTimeLock(
       buffer,
       tokenManager.address,
       mintReceiver.address,
-      klpManager.address,
+      nlpManager.address,
       rewardRouter.address,
       rewardManager.address,
       maxTokenSupply,
@@ -694,381 +694,381 @@ async function deployVaultReader() {
   return vaultReader;
 }
 
-async function deployStakedKlp(
-  klp,
-  klpManager,
-  stakedKlpTracker,
-  feeKlpTracker
+async function deployStakedNlp(
+  nlp,
+  nlpManager,
+  stakedNlpTracker,
+  feeNlpTracker
 ) {
-  const stakedKlp = await deployContract("StakedKlp", [
-    klp.address,
-    klpManager.address,
-    stakedKlpTracker.address,
-    feeKlpTracker.address,
+  const stakedNlp = await deployContract("StakedNlp", [
+    nlp.address,
+    nlpManager.address,
+    stakedNlpTracker.address,
+    feeNlpTracker.address,
   ]);
 
-  const klpBalance = await deployContract("KlpBalance", [
-    klpManager.address,
-    stakedKlpTracker.address,
+  const nlpBalance = await deployContract("NlpBalance", [
+    nlpManager.address,
+    stakedNlpTracker.address,
   ]);
 
-  return [stakedKlp, klpBalance];
+  return [stakedNlp, nlpBalance];
 }
 
 async function deployRewardRouter(
   tokens,
-  klpManager,
-  klp,
-  ktx,
-  esKtx,
-  bnKtx,
+  nlpManager,
+  nlp,
+  nsc,
+  esNsc,
+  bnNsc,
   timelock
 ) {
   const { wbnb } = tokens;
 
   const vestingDuration = 365 * 24 * 60 * 60;
   await sendTxn(
-    esKtx.setInPrivateTransferMode(true),
-    "esKtx.setInPrivateTransferMode"
+    esNsc.setInPrivateTransferMode(true),
+    "esNsc.setInPrivateTransferMode"
   );
   await sendTxn(
-    klp.setInPrivateTransferMode(true),
-    "klp.setInPrivateTransferMode"
+    nlp.setInPrivateTransferMode(true),
+    "nlp.setInPrivateTransferMode"
   );
 
-  const stakedKtxTracker = await deployContract("RewardTracker", [
-    "Staked KTX",
-    "sKTX",
+  const stakedNscTracker = await deployContract("RewardTracker", [
+    "Staked NSC",
+    "sNSC",
   ]);
-  const stakedKtxDistributor = await deployContract("RewardDistributor", [
-    esKtx.address,
-    stakedKtxTracker.address,
+  const stakedNscDistributor = await deployContract("RewardDistributor", [
+    esNsc.address,
+    stakedNscTracker.address,
   ]);
   await sendTxn(
-    stakedKtxTracker.initialize(
-      [ktx.address, esKtx.address],
-      stakedKtxDistributor.address
+    stakedNscTracker.initialize(
+      [nsc.address, esNsc.address],
+      stakedNscDistributor.address
     ),
-    "stakedKtxTracker.initialize"
+    "stakedNscTracker.initialize"
   );
   await sendTxn(
-    stakedKtxDistributor.updateLastDistributionTime(),
-    "stakedKtxDistributor.updateLastDistributionTime"
+    stakedNscDistributor.updateLastDistributionTime(),
+    "stakedNscDistributor.updateLastDistributionTime"
   );
 
-  const bonusKtxTracker = await deployContract("RewardTracker", [
-    "Staked + Bonus KTX",
-    "sbKTX",
+  const bonusNscTracker = await deployContract("RewardTracker", [
+    "Staked + Bonus NSC",
+    "sbNSC",
   ]);
-  const bonusKtxDistributor = await deployContract("BonusDistributor", [
-    bnKtx.address,
-    bonusKtxTracker.address,
+  const bonusNscDistributor = await deployContract("BonusDistributor", [
+    bnNsc.address,
+    bonusNscTracker.address,
   ]);
   await sendTxn(
-    bonusKtxTracker.initialize(
-      [stakedKtxTracker.address],
-      bonusKtxDistributor.address
+    bonusNscTracker.initialize(
+      [stakedNscTracker.address],
+      bonusNscDistributor.address
     ),
-    "bonusKtxTracker.initialize"
+    "bonusNscTracker.initialize"
   );
   await sendTxn(
-    bonusKtxDistributor.updateLastDistributionTime(),
-    "bonusKtxDistributor.updateLastDistributionTime"
+    bonusNscDistributor.updateLastDistributionTime(),
+    "bonusNscDistributor.updateLastDistributionTime"
   );
 
-  const feeKtxTracker = await deployContract("RewardTracker", [
-    "Staked + Bonus + Fee KTX",
-    "sbfKTX",
+  const feeNscTracker = await deployContract("RewardTracker", [
+    "Staked + Bonus + Fee NSC",
+    "sbfNSC",
   ]);
-  const feeKtxDistributor = await deployContract("RewardDistributor", [
+  const feeNscDistributor = await deployContract("RewardDistributor", [
     wbnb.address,
-    feeKtxTracker.address,
+    feeNscTracker.address,
   ]);
   await sendTxn(
-    feeKtxTracker.initialize(
-      [bonusKtxTracker.address, bnKtx.address],
-      feeKtxDistributor.address
+    feeNscTracker.initialize(
+      [bonusNscTracker.address, bnNsc.address],
+      feeNscDistributor.address
     ),
-    "feeKtxTracker.initialize"
+    "feeNscTracker.initialize"
   );
   await sendTxn(
-    feeKtxDistributor.updateLastDistributionTime(),
-    "feeKtxDistributor.updateLastDistributionTime"
+    feeNscDistributor.updateLastDistributionTime(),
+    "feeNscDistributor.updateLastDistributionTime"
   );
 
-  const feeKlpTracker = await deployContract("RewardTracker", [
-    "Fee KLP",
-    "fKLP",
+  const feeNlpTracker = await deployContract("RewardTracker", [
+    "Fee NLP",
+    "fNLP",
   ]);
-  const feeKlpDistributor = await deployContract("RewardDistributor", [
+  const feeNlpDistributor = await deployContract("RewardDistributor", [
     wbnb.address,
-    feeKlpTracker.address,
+    feeNlpTracker.address,
   ]);
   await sendTxn(
-    feeKlpTracker.initialize([klp.address], feeKlpDistributor.address),
-    "feeKlpTracker.initialize"
+    feeNlpTracker.initialize([nlp.address], feeNlpDistributor.address),
+    "feeNlpTracker.initialize"
   );
   await sendTxn(
-    feeKlpDistributor.updateLastDistributionTime(),
-    "feeKlpDistributor.updateLastDistributionTime"
+    feeNlpDistributor.updateLastDistributionTime(),
+    "feeNlpDistributor.updateLastDistributionTime"
   );
 
-  const stakedKlpTracker = await deployContract("RewardTracker", [
-    "Fee + Staked KLP",
-    "fsKLP",
+  const stakedNlpTracker = await deployContract("RewardTracker", [
+    "Fee + Staked NLP",
+    "fsNLP",
   ]);
-  const stakedKlpDistributor = await deployContract("RewardDistributor", [
-    esKtx.address,
-    stakedKlpTracker.address,
+  const stakedNlpDistributor = await deployContract("RewardDistributor", [
+    esNsc.address,
+    stakedNlpTracker.address,
   ]);
   await sendTxn(
-    stakedKlpTracker.initialize(
-      [feeKlpTracker.address],
-      stakedKlpDistributor.address
+    stakedNlpTracker.initialize(
+      [feeNlpTracker.address],
+      stakedNlpDistributor.address
     ),
-    "stakedKlpTracker.initialize"
+    "stakedNlpTracker.initialize"
   );
   await sendTxn(
-    stakedKlpDistributor.updateLastDistributionTime(),
-    "stakedKlpDistributor.updateLastDistributionTime"
+    stakedNlpDistributor.updateLastDistributionTime(),
+    "stakedNlpDistributor.updateLastDistributionTime"
   );
 
   await sendTxn(
-    stakedKtxTracker.setInPrivateTransferMode(true),
-    "stakedKtxTracker.setInPrivateTransferMode"
+    stakedNscTracker.setInPrivateTransferMode(true),
+    "stakedNscTracker.setInPrivateTransferMode"
   );
   await sendTxn(
-    stakedKtxTracker.setInPrivateStakingMode(true),
-    "stakedKtxTracker.setInPrivateStakingMode"
+    stakedNscTracker.setInPrivateStakingMode(true),
+    "stakedNscTracker.setInPrivateStakingMode"
   );
   await sendTxn(
-    bonusKtxTracker.setInPrivateTransferMode(true),
-    "bonusKtxTracker.setInPrivateTransferMode"
+    bonusNscTracker.setInPrivateTransferMode(true),
+    "bonusNscTracker.setInPrivateTransferMode"
   );
   await sendTxn(
-    bonusKtxTracker.setInPrivateStakingMode(true),
-    "bonusKtxTracker.setInPrivateStakingMode"
+    bonusNscTracker.setInPrivateStakingMode(true),
+    "bonusNscTracker.setInPrivateStakingMode"
   );
   await sendTxn(
-    bonusKtxTracker.setInPrivateClaimingMode(true),
-    "bonusKtxTracker.setInPrivateClaimingMode"
+    bonusNscTracker.setInPrivateClaimingMode(true),
+    "bonusNscTracker.setInPrivateClaimingMode"
   );
   await sendTxn(
-    feeKtxTracker.setInPrivateTransferMode(true),
-    "feeKtxTracker.setInPrivateTransferMode"
+    feeNscTracker.setInPrivateTransferMode(true),
+    "feeNscTracker.setInPrivateTransferMode"
   );
   await sendTxn(
-    feeKtxTracker.setInPrivateStakingMode(true),
-    "feeKtxTracker.setInPrivateStakingMode"
+    feeNscTracker.setInPrivateStakingMode(true),
+    "feeNscTracker.setInPrivateStakingMode"
   );
 
   await sendTxn(
-    feeKlpTracker.setInPrivateTransferMode(true),
-    "feeKlpTracker.setInPrivateTransferMode"
+    feeNlpTracker.setInPrivateTransferMode(true),
+    "feeNlpTracker.setInPrivateTransferMode"
   );
   await sendTxn(
-    feeKlpTracker.setInPrivateStakingMode(true),
-    "feeKlpTracker.setInPrivateStakingMode"
+    feeNlpTracker.setInPrivateStakingMode(true),
+    "feeNlpTracker.setInPrivateStakingMode"
   );
   await sendTxn(
-    stakedKlpTracker.setInPrivateTransferMode(true),
-    "stakedKlpTracker.setInPrivateTransferMode"
+    stakedNlpTracker.setInPrivateTransferMode(true),
+    "stakedNlpTracker.setInPrivateTransferMode"
   );
   await sendTxn(
-    stakedKlpTracker.setInPrivateStakingMode(true),
-    "stakedKlpTracker.setInPrivateStakingMode"
+    stakedNlpTracker.setInPrivateStakingMode(true),
+    "stakedNlpTracker.setInPrivateStakingMode"
   );
 
-  const ktxVester = await deployContract("Vester", [
-    "Vested KTX", // _name
-    "vKTX", // _symbol
+  const nscVester = await deployContract("Vester", [
+    "Vested NSC", // _name
+    "vNSC", // _symbol
     vestingDuration, // _vestingDuration
-    esKtx.address, // _esToken
-    feeKtxTracker.address, // _pairToken
-    ktx.address, // _claimableToken
-    stakedKtxTracker.address, // _rewardTracker
+    esNsc.address, // _esToken
+    feeNscTracker.address, // _pairToken
+    nsc.address, // _claimableToken
+    stakedNscTracker.address, // _rewardTracker
   ]);
 
-  const klpVester = await deployContract("Vester", [
-    "Vested KLP", // _name
-    "vKLP", // _symbol
+  const nlpVester = await deployContract("Vester", [
+    "Vested NLP", // _name
+    "vNLP", // _symbol
     vestingDuration, // _vestingDuration
-    esKtx.address, // _esToken
-    stakedKlpTracker.address, // _pairToken
-    ktx.address, // _claimableToken
-    stakedKlpTracker.address, // _rewardTracker
+    esNsc.address, // _esToken
+    stakedNlpTracker.address, // _pairToken
+    nsc.address, // _claimableToken
+    stakedNlpTracker.address, // _rewardTracker
   ]);
 
   const rewardRouter = await deployContract("RewardRouter", []);
   await sendTxn(
     rewardRouter.initialize(
       wbnb.address,
-      ktx.address,
-      esKtx.address,
-      bnKtx.address,
-      klp.address,
-      stakedKtxTracker.address,
-      bonusKtxTracker.address,
-      feeKtxTracker.address,
-      feeKlpTracker.address,
-      stakedKlpTracker.address,
-      klpManager.address,
-      ktxVester.address,
-      klpVester.address
+      nsc.address,
+      esNsc.address,
+      bnNsc.address,
+      nlp.address,
+      stakedNscTracker.address,
+      bonusNscTracker.address,
+      feeNscTracker.address,
+      feeNlpTracker.address,
+      stakedNlpTracker.address,
+      nlpManager.address,
+      nscVester.address,
+      nlpVester.address
     ),
     "rewardRouter.initialize"
   );
 
   await sendTxn(
-    klpManager.setHandler(rewardRouter.address, true),
-    "klpManager.setHandler(rewardRouter)"
+    nlpManager.setHandler(rewardRouter.address, true),
+    "nlpManager.setHandler(rewardRouter)"
   );
 
-  // allow rewardRouter to stake in stakedKtxTracker
+  // allow rewardRouter to stake in stakedNscTracker
   await sendTxn(
-    stakedKtxTracker.setHandler(rewardRouter.address, true),
-    "stakedKtxTracker.setHandler(rewardRouter)"
+    stakedNscTracker.setHandler(rewardRouter.address, true),
+    "stakedNscTracker.setHandler(rewardRouter)"
   );
-  // allow bonusKtxTracker to stake stakedKtxTracker
+  // allow bonusNscTracker to stake stakedNscTracker
   await sendTxn(
-    stakedKtxTracker.setHandler(bonusKtxTracker.address, true),
-    "stakedKtxTracker.setHandler(bonusKtxTracker)"
+    stakedNscTracker.setHandler(bonusNscTracker.address, true),
+    "stakedNscTracker.setHandler(bonusNscTracker)"
   );
-  // allow rewardRouter to stake in bonusKtxTracker
+  // allow rewardRouter to stake in bonusNscTracker
   await sendTxn(
-    bonusKtxTracker.setHandler(rewardRouter.address, true),
-    "bonusKtxTracker.setHandler(rewardRouter)"
+    bonusNscTracker.setHandler(rewardRouter.address, true),
+    "bonusNscTracker.setHandler(rewardRouter)"
   );
-  // allow bonusKtxTracker to stake feeKtxTracker
+  // allow bonusNscTracker to stake feeNscTracker
   await sendTxn(
-    bonusKtxTracker.setHandler(feeKtxTracker.address, true),
-    "bonusKtxTracker.setHandler(feeKtxTracker)"
+    bonusNscTracker.setHandler(feeNscTracker.address, true),
+    "bonusNscTracker.setHandler(feeNscTracker)"
   );
   // bonus multiplier basis: 10000, so 5000 is 50% per year.
   await sendTxn(
-    bonusKtxDistributor.setBonusMultiplier(5000),
-    "bonusKtxDistributor.setBonusMultiplier"
+    bonusNscDistributor.setBonusMultiplier(5000),
+    "bonusNscDistributor.setBonusMultiplier"
   );
-  // allow rewardRouter to stake in feeKtxTracker
+  // allow rewardRouter to stake in feeNscTracker
   await sendTxn(
-    feeKtxTracker.setHandler(rewardRouter.address, true),
-    "feeKtxTracker.setHandler(rewardRouter)"
+    feeNscTracker.setHandler(rewardRouter.address, true),
+    "feeNscTracker.setHandler(rewardRouter)"
   );
-  // allow stakedKtxTracker to stake esKtx
+  // allow stakedNscTracker to stake esNsc
   await sendTxn(
-    esKtx.setHandler(stakedKtxTracker.address, true),
-    "esKtx.setHandler(stakedKtxTracker)"
+    esNsc.setHandler(stakedNscTracker.address, true),
+    "esNsc.setHandler(stakedNscTracker)"
   );
-  // allow feeKtxTracker to stake bnKtx
+  // allow feeNscTracker to stake bnNsc
   await sendTxn(
-    bnKtx.setHandler(feeKtxTracker.address, true),
-    "bnKtx.setHandler(feeKtxTracker"
+    bnNsc.setHandler(feeNscTracker.address, true),
+    "bnNsc.setHandler(feeNscTracker"
   );
-  // allow rewardRouter to burn bnKtx
+  // allow rewardRouter to burn bnNsc
   await sendTxn(
-    bnKtx.setMinter(rewardRouter.address, true),
-    "bnKtx.setMinter(rewardRouter"
-  );
-  for (let i = 0; i < minter.length; i++) {
-    await sendTxn(
-      bnKtx.setMinter(minter[i], true),
-      `bnKtx.setMinter: ${minter[i]}`
-    );
-  }
-
-  // allow stakedKlpTracker to stake feeKlpTracker
-  await sendTxn(
-    feeKlpTracker.setHandler(stakedKlpTracker.address, true),
-    "feeKlpTracker.setHandler(stakedKlpTracker)"
-  );
-  // allow feeKlpTracker to stake klp
-  await sendTxn(
-    klp.setHandler(feeKlpTracker.address, true),
-    "klp.setHandler(feeKlpTracker)"
-  );
-
-  // allow rewardRouter to stake in feeKlpTracker
-  await sendTxn(
-    feeKlpTracker.setHandler(rewardRouter.address, true),
-    "feeKlpTracker.setHandler(rewardRouter)"
-  );
-  // allow rewardRouter to stake in stakedKlpTracker
-  await sendTxn(
-    stakedKlpTracker.setHandler(rewardRouter.address, true),
-    "stakedKlpTracker.setHandler(rewardRouter)"
-  );
-
-  await sendTxn(
-    esKtx.setHandler(rewardRouter.address, true),
-    "esKtx.setHandler(rewardRouter)"
-  );
-  await sendTxn(
-    esKtx.setHandler(stakedKtxDistributor.address, true),
-    "esKtx.setHandler(stakedKtxDistributor)"
-  );
-  await sendTxn(
-    esKtx.setHandler(stakedKlpDistributor.address, true),
-    "esKtx.setHandler(stakedKlpDistributor)"
-  );
-  await sendTxn(
-    esKtx.setHandler(stakedKlpTracker.address, true),
-    "esKtx.setHandler(stakedKlpTracker)"
-  );
-  await sendTxn(
-    esKtx.setHandler(ktxVester.address, true),
-    "esKtx.setHandler(ktxVester)"
-  );
-  await sendTxn(
-    esKtx.setHandler(klpVester.address, true),
-    "esKtx.setHandler(klpVester)"
-  );
-
-  await sendTxn(
-    esKtx.setMinter(ktxVester.address, true),
-    "esKtx.setMinter(ktxVester)"
-  );
-  await sendTxn(
-    esKtx.setMinter(klpVester.address, true),
-    "esKtx.setMinter(klpVester)"
+    bnNsc.setMinter(rewardRouter.address, true),
+    "bnNsc.setMinter(rewardRouter"
   );
   for (let i = 0; i < minter.length; i++) {
     await sendTxn(
-      esKtx.setMinter(minter[i], true),
-      `esKtx.setMinter: ${minter[i]}`
+      bnNsc.setMinter(minter[i], true),
+      `bnNsc.setMinter: ${minter[i]}`
+    );
+  }
+
+  // allow stakedNlpTracker to stake feeNlpTracker
+  await sendTxn(
+    feeNlpTracker.setHandler(stakedNlpTracker.address, true),
+    "feeNlpTracker.setHandler(stakedNlpTracker)"
+  );
+  // allow feeNlpTracker to stake nlp
+  await sendTxn(
+    nlp.setHandler(feeNlpTracker.address, true),
+    "nlp.setHandler(feeNlpTracker)"
+  );
+
+  // allow rewardRouter to stake in feeNlpTracker
+  await sendTxn(
+    feeNlpTracker.setHandler(rewardRouter.address, true),
+    "feeNlpTracker.setHandler(rewardRouter)"
+  );
+  // allow rewardRouter to stake in stakedNlpTracker
+  await sendTxn(
+    stakedNlpTracker.setHandler(rewardRouter.address, true),
+    "stakedNlpTracker.setHandler(rewardRouter)"
+  );
+
+  await sendTxn(
+    esNsc.setHandler(rewardRouter.address, true),
+    "esNsc.setHandler(rewardRouter)"
+  );
+  await sendTxn(
+    esNsc.setHandler(stakedNscDistributor.address, true),
+    "esNsc.setHandler(stakedNscDistributor)"
+  );
+  await sendTxn(
+    esNsc.setHandler(stakedNlpDistributor.address, true),
+    "esNsc.setHandler(stakedNlpDistributor)"
+  );
+  await sendTxn(
+    esNsc.setHandler(stakedNlpTracker.address, true),
+    "esNsc.setHandler(stakedNlpTracker)"
+  );
+  await sendTxn(
+    esNsc.setHandler(nscVester.address, true),
+    "esNsc.setHandler(nscVester)"
+  );
+  await sendTxn(
+    esNsc.setHandler(nlpVester.address, true),
+    "esNsc.setHandler(nlpVester)"
+  );
+
+  await sendTxn(
+    esNsc.setMinter(nscVester.address, true),
+    "esNsc.setMinter(nscVester)"
+  );
+  await sendTxn(
+    esNsc.setMinter(nlpVester.address, true),
+    "esNsc.setMinter(nlpVester)"
+  );
+  for (let i = 0; i < minter.length; i++) {
+    await sendTxn(
+      esNsc.setMinter(minter[i], true),
+      `esNsc.setMinter: ${minter[i]}`
     );
   }
 
   await sendTxn(
-    ktxVester.setHandler(rewardRouter.address, true),
-    "ktxVester.setHandler(rewardRouter)"
+    nscVester.setHandler(rewardRouter.address, true),
+    "nscVester.setHandler(rewardRouter)"
   );
   await sendTxn(
-    klpVester.setHandler(rewardRouter.address, true),
-    "klpVester.setHandler(rewardRouter)"
+    nlpVester.setHandler(rewardRouter.address, true),
+    "nlpVester.setHandler(rewardRouter)"
   );
 
   await sendTxn(
-    feeKtxTracker.setHandler(ktxVester.address, true),
-    "feeKtxTracker.setHandler(ktxVester)"
+    feeNscTracker.setHandler(nscVester.address, true),
+    "feeNscTracker.setHandler(nscVester)"
   );
   await sendTxn(
-    stakedKlpTracker.setHandler(klpVester.address, true),
-    "stakedKlpTracker.setHandler(klpVester)"
+    stakedNlpTracker.setHandler(nlpVester.address, true),
+    "stakedNlpTracker.setHandler(nlpVester)"
   );
 
   return [
-    stakedKtxTracker,
-    stakedKtxDistributor,
-    bonusKtxTracker,
-    bonusKtxDistributor,
-    feeKtxTracker,
-    feeKtxDistributor,
-    feeKlpTracker,
-    feeKlpDistributor,
-    stakedKlpTracker,
-    stakedKlpDistributor,
-    ktxVester,
-    klpVester,
+    stakedNscTracker,
+    stakedNscDistributor,
+    bonusNscTracker,
+    bonusNscDistributor,
+    feeNscTracker,
+    feeNscDistributor,
+    feeNlpTracker,
+    feeNlpDistributor,
+    stakedNlpTracker,
+    stakedNlpDistributor,
+    nscVester,
+    nlpVester,
     rewardRouter,
   ];
 }
@@ -1235,15 +1235,15 @@ async function main() {
       maxCumulativeDeltaDiff: 10 * 1000 * 1000,
     },
   };
-  const [ktx, esKtx, bnKtx] = await deployKtx();
+  const [nsc, esNsc, bnNsc] = await deployNsc();
 
   const [
     vault,
     usdg,
     router,
     vaultPriceFeed,
-    klp,
-    klpManager,
+    nlp,
+    nlpManager,
     vaultUtils,
     shortsTracker,
   ] = await deployVault(tokens);
@@ -1251,8 +1251,8 @@ async function main() {
   const tokenManager = await deployTokenManager();
   console.log("TokenManager address:", tokenManager.address);
 
-  // const klpManager = await deployKlpManager(vault, usdg, klp);
-  // console.log("KlpManager address:", klpManager.address);
+  // const nlpManager = await deployNlpManager(vault, usdg, nlp);
+  // console.log("NlpManager address:", nlpManager.address);
 
   const orderBook = await deployOrderBook(tokens, router, vault, usdg);
   console.log("OrderBook address:", orderBook.address);
@@ -1276,20 +1276,20 @@ async function main() {
   console.log("PositionManager address:", positionManager.address);
 
   const [
-    stakedKtxTracker,
-    stakedKtxDistributor,
-    bonusKtxTracker,
-    bonusKtxDistributor,
-    feeKtxTracker,
-    feeKtxDistributor,
-    feeKlpTracker,
-    feeKlpDistributor,
-    stakedKlpTracker,
-    stakedKlpDistributor,
-    ktxVester,
-    klpVester,
+    stakedNscTracker,
+    stakedNscDistributor,
+    bonusNscTracker,
+    bonusNscDistributor,
+    feeNscTracker,
+    feeNscDistributor,
+    feeNlpTracker,
+    feeNlpDistributor,
+    stakedNlpTracker,
+    stakedNlpDistributor,
+    nscVester,
+    nlpVester,
     rewardRouter,
-  ] = await deployRewardRouter(tokens, klpManager, klp, ktx, esKtx, bnKtx);
+  ] = await deployRewardRouter(tokens, nlpManager, nlp, nsc, esNsc, bnNsc);
   const rewardManager = await deployContract(
     "RewardManager",
     [],
@@ -1298,7 +1298,7 @@ async function main() {
 
   const timelock = await deployTimeLock(
     tokenManager,
-    klpManager,
+    nlpManager,
     rewardRouter,
     positionRouter,
     positionManager,
@@ -1308,43 +1308,43 @@ async function main() {
   // const vaultUnils = await deployVaultUtiles(vault, timelock);
   // console.log("VaultUnils address:", vaultUnils.address);
 
-  await sendTxn(esKtx.setGov(timelock.address), "set gov");
-  await sendTxn(bnKtx.setGov(timelock.address), "set gov");
-  await sendTxn(ktxVester.setGov(timelock.address), "set gov");
-  await sendTxn(klpVester.setGov(timelock.address), "set gov");
+  await sendTxn(esNsc.setGov(timelock.address), "set gov");
+  await sendTxn(bnNsc.setGov(timelock.address), "set gov");
+  await sendTxn(nscVester.setGov(timelock.address), "set gov");
+  await sendTxn(nlpVester.setGov(timelock.address), "set gov");
   await sendTxn(shortsTracker.setGov(timelock.address), "set gov");
-  await sendTxn(klpManager.setGov(timelock.address), "set gov");
-  await sendTxn(stakedKtxTracker.setGov(timelock.address), "set gov");
-  await sendTxn(bonusKtxTracker.setGov(timelock.address), "set gov");
-  await sendTxn(feeKtxTracker.setGov(timelock.address), "set gov");
-  await sendTxn(feeKlpTracker.setGov(timelock.address), "set gov");
-  await sendTxn(stakedKlpTracker.setGov(timelock.address), "set gov");
-  await sendTxn(stakedKtxDistributor.setGov(timelock.address), "set gov");
-  await sendTxn(stakedKlpDistributor.setGov(timelock.address), "set gov");
+  await sendTxn(nlpManager.setGov(timelock.address), "set gov");
+  await sendTxn(stakedNscTracker.setGov(timelock.address), "set gov");
+  await sendTxn(bonusNscTracker.setGov(timelock.address), "set gov");
+  await sendTxn(feeNscTracker.setGov(timelock.address), "set gov");
+  await sendTxn(feeNlpTracker.setGov(timelock.address), "set gov");
+  await sendTxn(stakedNlpTracker.setGov(timelock.address), "set gov");
+  await sendTxn(stakedNscDistributor.setGov(timelock.address), "set gov");
+  await sendTxn(stakedNlpDistributor.setGov(timelock.address), "set gov");
 
   await sendTxn(
     rewardManager.initialize(
       timelock.address,
       rewardRouter.address,
-      klpManager.address,
-      stakedKtxTracker.address,
-      bonusKtxTracker.address,
-      feeKtxTracker.address,
-      feeKlpTracker.address,
-      stakedKlpTracker.address,
-      stakedKtxDistributor.address,
-      stakedKlpDistributor.address,
-      esKtx.address,
-      bnKtx.address,
-      ktxVester.address,
-      klpVester.address
+      nlpManager.address,
+      stakedNscTracker.address,
+      bonusNscTracker.address,
+      feeNscTracker.address,
+      feeNlpTracker.address,
+      stakedNlpTracker.address,
+      stakedNscDistributor.address,
+      stakedNlpDistributor.address,
+      esNsc.address,
+      bnNsc.address,
+      nscVester.address,
+      nlpVester.address
     ),
     "rewardManager.initialize"
   );
 
   await sendTxn(
-    rewardManager.updateEsKtxHandlers(),
-    "rewardManager.updateEsKtxHandlers"
+    rewardManager.updateEsNscHandlers(),
+    "rewardManager.updateEsNscHandlers"
   );
   await sendTxn(
     rewardManager.enableRewardRouter(),
@@ -1389,20 +1389,20 @@ async function main() {
 
   const balanceUpdater = await deployBalanceUpdater();
   const batchSender = await deployBatchSender();
-  const esKtxBatchSender = await deployEsKtxBatchSender(esKtx);
-  const ktxTimelock = await deployKtxTimelock(tokenManager, rewardManager);
+  const esNscBatchSender = await deployEsNscBatchSender(esNsc);
+  const nscTimelock = await deployNscTimelock(tokenManager, rewardManager);
   const orderBookReader = await deployOrderBookReader();
   const reader = await deployReader();
   const rewardReader = await deployRewardReader();
   const vaultReader = await deployVaultReader();
-  const [stakedKlp, klpBalance] = await deployStakedKlp(
-    klp,
-    klpManager,
-    stakedKlpTracker,
-    feeKlpTracker
+  const [stakedNlp, nlpBalance] = await deployStakedNlp(
+    nlp,
+    nlpManager,
+    stakedNlpTracker,
+    feeNlpTracker
   );
   const stakeManager = await deployStakeManager();
-  // const bridge = await deployBridge(ktx, wKtx);
+  // const bridge = await deployBridge(nsc, wNsc);
   // const snapshotToken = await deploySnapshotToken();
 
   // const addresses = await deployFaucetToken();
@@ -1452,34 +1452,34 @@ async function main() {
   console.log('Vault: "%s",', vault.address);
   console.log('PositionRouter: "%s",', positionRouter.address);
   console.log('PositionManager: "%s",', positionManager.address);
-  console.log('KlpManager: "%s",', klpManager.address);
-  console.log('KTX: "%s",', ktx.address);
-  console.log('ES_KTX: "%s",', esKtx.address);
-  console.log('BN_KTX: "%s",', bnKtx.address);
-  console.log('KLP: "%s",', klp.address);
+  console.log('NlpManager: "%s",', nlpManager.address);
+  console.log('NSC: "%s",', nsc.address);
+  console.log('ES_NSC: "%s",', esNsc.address);
+  console.log('BN_NSC: "%s",', bnNsc.address);
+  console.log('NLP: "%s",', nlp.address);
   console.log('RewardRouter: "%s",', rewardRouter.address);
   console.log('RewardReader: "%s",', rewardReader.address);
-  console.log('StakedKtxTracker: "%s",', stakedKtxTracker.address);
-  console.log('BonusKtxTracker: "%s",', bonusKtxTracker.address);
-  console.log('FeeKtxTracker: "%s",', feeKtxTracker.address);
-  console.log('StakedKlpTracker: "%s",', stakedKlpTracker.address);
-  console.log('FeeKlpTracker: "%s",', feeKlpTracker.address);
-  console.log('StakedKtxDistributor: "%s",', stakedKtxDistributor.address);
-  console.log('StakedKlpDistributor: "%s",', stakedKlpDistributor.address);
-  console.log('FeeKlpDistributor: "%s",', feeKlpDistributor.address);
-  console.log('FeeKtxDistributor: "%s",', feeKtxDistributor.address);
-  console.log('KtxVester: "%s",', ktxVester.address);
-  console.log('KlpVester: "%s",', klpVester.address);
+  console.log('StakedNscTracker: "%s",', stakedNscTracker.address);
+  console.log('BonusNscTracker: "%s",', bonusNscTracker.address);
+  console.log('FeeNscTracker: "%s",', feeNscTracker.address);
+  console.log('StakedNlpTracker: "%s",', stakedNlpTracker.address);
+  console.log('FeeNlpTracker: "%s",', feeNlpTracker.address);
+  console.log('StakedNscDistributor: "%s",', stakedNscDistributor.address);
+  console.log('StakedNlpDistributor: "%s",', stakedNlpDistributor.address);
+  console.log('FeeNlpDistributor: "%s",', feeNlpDistributor.address);
+  console.log('FeeNscDistributor: "%s",', feeNscDistributor.address);
+  console.log('NscVester: "%s",', nscVester.address);
+  console.log('NlpVester: "%s",', nlpVester.address);
   console.log('ReferralStorage: "%s",', referralStorage.address);
   console.log('VaultPriceFeed: "%s",', vaultPriceFeed.address);
-  console.log('KtxTimelock: "%s",', ktxTimelock.address);
+  console.log('NscTimelock: "%s",', nscTimelock.address);
   console.log('Timelock: "%s",', timelock.address);
-  console.log('FeeKtxRewardDistributor: "%s",', feeKtxDistributor.address);
-  console.log('EsktxKtxRewardDistributor: "%s",', stakedKtxDistributor.address);
-  console.log('FeeKlpRewardDistributor: "%s",', feeKlpDistributor.address);
-  console.log('EsktxKlpRewardDistributor: "%s",', stakedKlpDistributor.address);
+  console.log('FeeNscRewardDistributor: "%s",', feeNscDistributor.address);
+  console.log('EsnscNscRewardDistributor: "%s",', stakedNscDistributor.address);
+  console.log('FeeNlpRewardDistributor: "%s",', feeNlpDistributor.address);
+  console.log('EsnscNlpRewardDistributor: "%s",', stakedNlpDistributor.address);
   console.log('SecondaryPriceFeed: "%s",', secondaryPriceFeed.address);
-  console.log('BonusKtxDistributor: "%s",', bonusKtxDistributor.address);
+  console.log('BonusNscDistributor: "%s",', bonusNscDistributor.address);
   console.log('BatchSender: "%s",', batchSender.address);
   console.log('ShortsTracker: "%s",', shortsTracker.address);
   console.log('RewardManager: "%s",', rewardManager.address);
