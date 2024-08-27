@@ -68,6 +68,20 @@ module.exports = {
           "daughter lyrics tooth napkin walnut panic fancy roof endorse assist edge chief",
       },
     },
+    basetestnet: {
+      url: "https://sepolia.base.org",
+      chainId: 84532,
+      gas: "auto",
+      // gas: 600000,
+      // accounts: [
+      // "18a288e26a24a0fcfc741bcbf2c4b4cc57b710c76b37574b68fa1b0b3eef4615",
+      // "3d03eba4060f78b1eacd12b764ec95d7525bbf38db575209c3ccbb2a9dc90ead",
+      // ],
+      accounts: {
+        mnemonic:
+          "sleep fan pull vault coyote bind decrease zone runway youth panther neck",
+      },
+    },
   },
   etherscan: {
     apiKey: {
