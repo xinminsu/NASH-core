@@ -1100,23 +1100,23 @@ async function main() {
   } else {
     bnb = await contractAt(
       "Token",
-      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"
+      "0x600Bf57Df5269b28b74362FA25456B964a1C4ca8"
     );
     btc = await contractAt(
       "Token",
-      "0x88448E5608F35E1f67Bdb39cbA3445Fc923b09e5"
+      "0xcE10Ca7fE13dAAAFFEF7a4E796a48bB4a22A8b5d"
     );
     eth = await contractAt(
       "Token",
-      "0x143DFdedF1062155B9E6ea80D1645D650C509780"
+      "0xe9C5F21b5ba297e84c555f0eC2161A07CFba9915"
     );
     busd = await contractAt(
       "Token",
-      "0x6993eC95A649310C88a946A94c20B2aBd37251eC"
+      "0x6c3DEf62765044a565a972EAc39e836650B80Ab2"
     );
     usdt = await contractAt(
       "Token",
-      "0xd4f65b75a2294e4e0cc4e6833092b5a29315c973"
+      "0x0f4174Ead22225c006d595105B8e9Ae5Fd3dfA08"
     );
   }
 
